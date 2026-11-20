@@ -11,16 +11,17 @@ declare global {
 
 let current: User | null = null;
 let clientId: string | null = null;
-const subs = new Set<(u: User | null) => void>();
+const subs = new Set<() => void>();
 function set(u: User | null) {
   current = u;
-  subs.forEach((s) => s(u));
+  subs.forEach((s) => s());
 }
 
 export async function initAuth() {
   try {
-    const [me, cfg] = await Promise.all([fetch('/api/me'), fetch('/api/config')]);
-    if (cfg.ok) clientId = ((await cfg.json()) as { googleClientId?: string }).googleClientId ?? null;
+    const cfg = await fetch('/api/config');
+    if (cfg.ok) clientId = ((await cfg.json()) as { googleClientId?: string }).googleClientId || null;
+    const me = await fetch('/api/me');
     if (me.ok) {
       const data = (await me.json()) as { user: User | null };
       if (data.user) {
@@ -31,15 +32,17 @@ export async function initAuth() {
   } catch {
     /* no server running (for example plain "npm run dev"): local progress only */
   }
+  set(current); // re-render, so the sign-in button appears once we know it's available
 }
 
 export function useAuth() {
-  const [u, setU] = useState(current);
+  const [, rerender] = useState(0);
   useEffect(() => {
-    subs.add(setU);
-    return () => void subs.delete(setU);
+    const sub = () => rerender((n) => n + 1);
+    subs.add(sub);
+    return () => void subs.delete(sub);
   }, []);
-  return { user: u, loginAvailable: !!clientId };
+  return { user: current, loginAvailable: !!clientId };
 }
 
 function loadGsi(): Promise<void> {
