@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { logout, renderGoogleButton, useAuth } from '../lib/auth';
 
 export default function AccountBox() {
-  const { user, loginAvailable } = useAuth();
+  const { user, loginAvailable, signInError } = useAuth();
   const btn = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!user && loginAvailable && btn.current) renderGoogleButton(btn.current);
@@ -17,5 +17,10 @@ export default function AccountBox() {
       </div>
     );
   if (!loginAvailable) return <div className="account muted small-text" title="Progress is saved on this device">Saved on this device</div>;
-  return <div className="account" ref={btn} />;
+  return (
+    <div className="account">
+      {signInError && <span className="sign-in-error" role="alert">{signInError}</span>}
+      <div ref={btn} />
+    </div>
+  );
 }

@@ -40,3 +40,13 @@ Put both IDs in `wrangler.toml` (`GOOGLE_CLIENT_ID` and `database_id`) and commi
 After a minute or two the site is at `https://tururucoding.pages.dev`. Every push to `main` redeploys it automatically.
 
 If Cloudflare gives a different address (for example when the name is taken), add that address to the Google **Authorized JavaScript origins** too.
+
+## Who can sign in
+
+Only the Google accounts listed in `ALLOWED_EMAIL_SHA256` in `wrangler.toml` can sign in. Each entry is the SHA-256 "fingerprint" of a lowercase email address, so the address itself never appears in this public repository. To allow another account, add its fingerprint, separated by a comma:
+
+```bash
+node -e "console.log(require('crypto').createHash('sha256').update('someone@gmail.com').digest('hex'))"
+```
+
+Leave it empty (`""`) to let any Google account sign in.

@@ -1,7 +1,9 @@
 export interface Env {
   DB: D1Database;
   GOOGLE_CLIENT_ID?: string;
-  ALLOWED_EMAILS?: string; // optional, comma separated. Empty = anyone with a Google account.
+  // Who may sign in. Both empty = any Google account.
+  ALLOWED_EMAIL_SHA256?: string; // SHA-256 hex of each lowercase email, comma separated (kept in wrangler.toml)
+  ALLOWED_EMAILS?: string; // plain emails, comma separated (only as a Cloudflare secret, never in the repo)
 }
 
 export const COOKIE = 'tururu_session';
@@ -55,4 +57,20 @@ export function ensureSchema(env: Env) {
     throw e;
   });
   return schemaReady;
+}
+
+function list(value?: string) {
+  return (value ?? '').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean);
+}
+
+async function sha256Hex(text: string) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function isAllowedEmail(env: Env, email: string) {
+  const plain = list(env.ALLOWED_EMAILS);
+  const hashes = list(env.ALLOWED_EMAIL_SHA256);
+  if (!plain.length && !hashes.length) return true;
+  return plain.includes(email) || hashes.includes(await sha256Hex(email));
 }

@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { COOKIE, SESSION_DAYS, json, randomToken, type Env } from '../../_lib';
+import { COOKIE, SESSION_DAYS, isAllowedEmail, json, randomToken, type Env } from '../../_lib';
 
 const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 
@@ -20,8 +20,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
   const email = String(p.email ?? '').toLowerCase();
   if (!p.email_verified || !email) return json({ error: 'Email not verified' }, { status: 401 });
-  const allowed = (env.ALLOWED_EMAILS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-  if (allowed.length && !allowed.includes(email)) return json({ error: 'This account is not allowed' }, { status: 403 });
+  if (!(await isAllowedEmail(env, email))) return json({ error: 'This Google account is not allowed to sign in here.' }, { status: 403 });
 
   const sub = String(p.sub);
   const name = String(p.name ?? email);

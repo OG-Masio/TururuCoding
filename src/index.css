@@ -139,3 +139,4 @@ a { color: var(--accent); }
 .console-body pre { margin: 0; padding: 3px 0; border-bottom: 1px solid var(--line); font: 13px/1.4 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
 .console-body .log-error { color: #d33; }
 .console-body .log-warn { color: #b7791f; }
+.sign-in-error { color: #d33; font-size: 13px; max-width: 220px; line-height: 1.3; }

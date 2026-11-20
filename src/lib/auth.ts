@@ -11,6 +11,7 @@ declare global {
 
 let current: User | null = null;
 let clientId: string | null = null;
+let signInError: string | null = null;
 const subs = new Set<() => void>();
 function set(u: User | null) {
   current = u;
@@ -42,7 +43,7 @@ export function useAuth() {
     subs.add(sub);
     return () => void subs.delete(sub);
   }, []);
-  return { user: current, loginAvailable: !!clientId };
+  return { user: current, loginAvailable: !!clientId, signInError };
 }
 
 function loadGsi(): Promise<void> {
@@ -68,8 +69,13 @@ export async function renderGoogleButton(el: HTMLElement) {
         body: JSON.stringify({ credential: resp.credential }),
       });
       if (r.ok) {
+        signInError = null;
         set(((await r.json()) as { user: User }).user);
         await syncWithServer();
+      } else {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        signInError = body.error ?? 'Sign-in failed. Please try again.';
+        set(current);
       }
     },
   });
