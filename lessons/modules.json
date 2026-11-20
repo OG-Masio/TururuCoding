@@ -1,0 +1,17 @@
+[
+  { "id": "00-setup", "title": "Getting set up", "summary": "How this site works, VS Code and the Windows terminal." },
+  { "id": "01-html-css", "title": "HTML and CSS refresh", "summary": "Structure, Flexbox, Grid and responsive layouts." },
+  { "id": "02-javascript", "title": "JavaScript basics", "summary": "Variables, functions, arrays, objects, the DOM and events." },
+  { "id": "03-js-internet", "title": "JavaScript and the internet", "summary": "fetch, async/await, JSON and APIs." },
+  { "id": "04-git", "title": "Git and GitHub", "summary": "Commits, branches and pull requests." },
+  { "id": "05-react", "title": "React", "summary": "Components, props, state, effects and forms." },
+  { "id": "06-typescript", "title": "TypeScript basics", "summary": "Types for React apps." },
+  { "id": "07-backend", "title": "Back end", "summary": "APIs with Cloudflare Workers." },
+  { "id": "08-databases", "title": "Databases", "summary": "SQL, tables, queries and Cloudflare D1." },
+  { "id": "09-auth-security", "title": "Login and security", "summary": "Accounts, sessions, passwords and common attacks." },
+  { "id": "10-testing", "title": "Testing", "summary": "Vitest, React Testing Library and Playwright." },
+  { "id": "11-deploy", "title": "Cloud deploys", "summary": "Cloudflare Pages, domains and GitHub Actions." },
+  { "id": "12-mobile", "title": "Mobile with React Native and Expo", "summary": "Screens, navigation, storage and phone features. Android first, iOS later." },
+  { "id": "13-ai-apps", "title": "AI apps", "summary": "Calling an AI API, prompts, streaming and chat UIs." },
+  { "id": "14-final", "title": "Final projects", "summary": "Build a small version of one of your own projects." }
+]

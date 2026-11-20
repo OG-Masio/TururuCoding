@@ -1,0 +1,20 @@
+# Cloudflare Pages settings. This file is the source of truth for the project's
+# settings, so nothing needs to be set by hand in the Cloudflare dashboard.
+name = "tururucoding"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Public value from Google Cloud (it's not a secret). Empty = sign-in hidden, progress saved per device.
+GOOGLE_CLIENT_ID = ""
+# Only these Google accounts may sign in. Each value is the SHA-256 of the lowercase email
+# (comma separated), so the address itself never appears in this public repo. Empty = any Google account.
+# To get the value for an address:
+#   node -e "console.log(require('crypto').createHash('sha256').update('you@gmail.com').digest('hex'))"
+ALLOWED_EMAIL_SHA256 = "088093038ef8655d178db139d62dc4f082977cf816ea3e122e59b6afaf90978a"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tururucoding"
+database_id = "0fd8bc21-6fcf-4283-825a-66472a4ff759"
+migrations_dir = "migrations"
