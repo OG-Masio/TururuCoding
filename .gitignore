@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+*.local
+.DS_Store
+cloudflare/node_modules
+cloudflare/.wrangler
+# Written by scripts/cloudflare.mjs on the computer you publish from.
+# They name your Cloudflare account, so they stay out of this public repository.
+cloudflare/wrangler.jsonc
+cloudflare/deploy.json
+cloudflare/wrangler.test.jsonc
+qa-out
