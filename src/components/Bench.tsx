@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { Check, Files } from "../lib/lesson";
 import { CodeEditor } from "./CodeEditor";
+import { KeysHelp } from "./KeysHelp";
 import { Preview, type ConsoleEntry } from "./Preview";
 
 type View = "split" | "code" | "result";
@@ -17,7 +18,7 @@ interface Props {
   placeholder?: string;
 }
 
-/** The workbench: your code on the blueprint, the result on the white sheet. */
+/** The workbench: your code in the code area, the result on the white sheet. */
 export function Bench({ label, files, fileOrder, onChange, checks, onChecks, actions, placeholder }: Props) {
   const [active, setActive] = useState(fileOrder[0]);
   const [view, setView] = useState<View>("split");
@@ -36,7 +37,10 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
             </button>
           ))}
         </div>
-        <div className="bench__actions">{actions}</div>
+        <div className="bench__actions">
+          {actions}
+          <KeysHelp />
+        </div>
       </div>
 
       <div className="bench__editor">

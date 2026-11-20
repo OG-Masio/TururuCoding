@@ -257,12 +257,17 @@ export interface ProjectRecord {
 }
 
 export interface Prefs {
+  /** The paper look of TururuCoding itself. */
   theme: "auto" | "light" | "dark";
+  /** A VS Code theme from the list, or "tururu" for the site's own blueprint. */
+  codeTheme: string;
+  /** Does the VS Code theme color the pages too, or only the code areas? */
+  themeWholeSite: boolean;
   /** Keep twist answers folded until you click them. */
   foldTwist: boolean;
 }
 
-export const defaultPrefs: Prefs = { theme: "auto", foldTwist: false };
+export const defaultPrefs: Prefs = { theme: "auto", codeTheme: "tururu", themeWholeSite: true, foldTwist: false };
 
 export const getPrefs = (): Prefs => ({ ...defaultPrefs, ...(store.get<Partial<Prefs>>("prefs") ?? {}) });
 export const setPrefs = (patch: Partial<Prefs>) => store.set("prefs", { ...getPrefs(), ...patch });

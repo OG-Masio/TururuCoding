@@ -19,7 +19,7 @@
  */
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -133,16 +133,29 @@ const copyToClipboard = (text) =>
 
 // -------------------------------------------------------------------- steps
 
+/**
+ * True when the packages in `dir` were never installed, or package.json changed
+ * since the last install (an update of the site can need a new package).
+ */
+const needsInstall = (dir) => {
+  const marker = join(dir, "node_modules", ".tururu-installed");
+  if (!existsSync(marker)) return true;
+  return statSync(join(dir, "package.json")).mtimeMs > statSync(marker).mtimeMs;
+};
+const markInstalled = (dir) => writeFileSync(join(dir, "node_modules", ".tururu-installed"), new Date().toISOString() + "\n");
+
 const ensureTools = async () => {
   const [major, minor] = process.versions.node.split(".").map(Number);
   if (major < 20 || (major === 20 && minor < 19)) stop(`Node.js 20.19 or newer is needed (you have ${process.versions.node}). Install the LTS version from https://nodejs.org.`);
-  if (!existsSync(join(root, "node_modules", "vite"))) {
-    console.log("Installing the site's dependencies first…");
+  if (needsInstall(root) || !existsSync(join(root, "node_modules", "vite"))) {
+    console.log("Installing what the site needs (first time, or after an update)…");
     if ((await npmInstall(root)).code !== 0) stop("npm install failed. Scroll up for the reason.");
+    markInstalled(root);
   }
-  if (!existsSync(wranglerBin)) {
-    console.log("Installing Wrangler, Cloudflare's deploy tool (one time, about 100 MB)…");
+  if (needsInstall(cfDir) || !existsSync(wranglerBin)) {
+    console.log("Installing Wrangler, Cloudflare's deploy tool (about 100 MB the first time)…");
     if ((await npmInstall(cfDir)).code !== 0) stop("Installing Wrangler failed. Scroll up for the reason.");
+    markInstalled(cfDir);
   }
 };
 

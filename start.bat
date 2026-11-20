@@ -21,15 +21,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if not exist node_modules (
-  echo Installing dependencies. This happens once and takes a minute or two...
-  call npm install
-  if errorlevel 1 (
-    echo.
-    echo npm install failed. Scroll up for the reason.
-    pause
-    exit /b 1
-  )
+rem Runs every time: it takes a few seconds, and after an update it adds what is new.
+echo Checking what the site needs. The first time this takes a minute or two...
+call npm install --no-audit --no-fund
+if errorlevel 1 (
+  echo.
+  echo npm install failed. Scroll up for the reason.
+  pause
+  exit /b 1
 )
 
 echo.

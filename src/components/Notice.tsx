@@ -25,7 +25,7 @@ export function Notice({ notice, onClose }: Props) {
         <button
           type="button"
           className="linkbtn"
-          style={{ color: "var(--hi)", fontWeight: 700, marginLeft: 8 }}
+          style={{ color: "var(--paper)", fontWeight: 800, marginLeft: 8 }}
           onClick={() => {
             notice.action?.run();
             onClose();

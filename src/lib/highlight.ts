@@ -6,7 +6,8 @@ import { cssLanguage } from "@codemirror/lang-css";
 import { htmlLanguage } from "@codemirror/lang-html";
 import { javascriptLanguage, jsxLanguage, tsxLanguage, typescriptLanguage } from "@codemirror/lang-javascript";
 import type { Language } from "@codemirror/language";
-import { classHighlighter, highlightTree } from "@lezer/highlight";
+import { highlightTree } from "@lezer/highlight";
+import { highlighters } from "./tokens";
 
 export const languageFor = (fileOrLang: string): Language | null => {
   const key = fileOrLang.toLowerCase().split(".").pop() ?? "";
@@ -42,7 +43,7 @@ export function highlight(code: string, fileOrLang: string): string {
   let pos = 0;
   try {
     const tree = language.parser.parse(code);
-    highlightTree(tree, classHighlighter, (from, to, classes) => {
+    highlightTree(tree, highlighters, (from, to, classes) => {
       if (from > pos) out += escapeHtml(code.slice(pos, from));
       out += `<span class="${classes}">${escapeHtml(code.slice(from, to))}</span>`;
       pos = to;

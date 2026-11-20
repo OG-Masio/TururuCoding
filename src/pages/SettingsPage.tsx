@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { ThemePicker } from "../components/ThemePicker";
 import { download } from "../lib/download";
 import { useScrollTop, useTitle } from "../lib/hooks";
-import { getPrefs, setPrefs, store, useStoreVersion, type Prefs, type Rec } from "../lib/store";
+import { getPrefs, setPrefs, store, useStoreVersion, type Rec } from "../lib/store";
 import { deviceLink, linkDevice, serverInfo, syncNow, unlinkDevice, useSyncStatus } from "../lib/sync";
 
 const time = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -67,7 +68,7 @@ export function SettingsPage() {
   const currentLink = deviceLink();
 
   return (
-    <main className="page page--narrow">
+    <main className="page settings">
       <h1 style={{ fontSize: "clamp(32px, 4.6vw, 48px)", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 6 }}>Settings</h1>
 
       {message ? (
@@ -76,15 +77,8 @@ export function SettingsPage() {
         </div>
       ) : null}
 
-      <h2 className="sectionhead">Look</h2>
-      <div className="field">
-        <label htmlFor="theme">Theme</label>
-        <select id="theme" value={prefs.theme} onChange={(e) => setPrefs({ theme: e.target.value as Prefs["theme"] })}>
-          <option value="auto">Same as this device</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </div>
+      <h2 className="sectionhead">Theme</h2>
+      <ThemePicker />
 
       <h2 className="sectionhead">Lessons</h2>
       <label className="choice">

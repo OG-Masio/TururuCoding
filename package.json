@@ -19,6 +19,7 @@
     "cloud:logout": "node scripts/cloudflare.mjs logout"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.12",
@@ -30,6 +31,7 @@
     "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
     "@lezer/highlight": "^1.2.5",
     "codemirror": "^6.0.2",
+    "emmet": "^2.4.11",
     "marked": "^18.2.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

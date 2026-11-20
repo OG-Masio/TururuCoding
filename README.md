@@ -8,6 +8,10 @@ you twist it (a small change of your own). No answer is ever hidden.
 - **The map** shows the whole course: 8 tracks, 37 units, 306 lessons, a project for every unit and a
   capstone for every track.
 - **Lessons** have an editor with a live result next to it. Nothing to install.
+- **Fast typing** like in VS Code: Tab expands short forms (Emmet) and jumps out of a closing tag. The
+  Keys button in the editor lists everything.
+- **Themes:** TururuCoding's own look, or the colors of 45 well-known VS Code themes, for the code areas
+  or for the whole site. See `THEMES.md` for who made each one.
 - **Progress and code** are saved in the browser and can sync between your devices through your own
   Cloudflare account.
 
@@ -83,6 +87,10 @@ public/sandbox/images/   sample images lessons can use as images/<name>.svg
 src/
   lib/lesson.ts          reads a lesson file
   lib/preview.ts         builds the page that runs in the result frame
+  lib/tokens.ts          names each piece of code (tag, attribute, string…) so themes can color it
+  lib/themes.ts          the colors of the VS Code themes (generated, do not edit by hand)
+  lib/theme.ts           puts the chosen theme on the page
+  lib/editorKeys.ts      the fast-typing keys
   lib/store.ts           progress and code in the browser
   lib/sync.ts            syncing with the server
   lib/course.ts          ids, numbers, progress, loading lessons
@@ -91,6 +99,7 @@ src/
 cloudflare/worker.ts     the server: static files + /api/sync (a Durable Object with SQLite)
 scripts/cloudflare.mjs   the publish script behind cloud-deploy.bat
 scripts/check-lessons.mjs  opens every lesson in Chrome and runs its checks
+scripts/build-themes.mjs   reads real VS Code theme files and writes src/lib/themes.ts and THEMES.md
 tests/                   unit tests
 ```
 
@@ -166,3 +175,10 @@ node scripts/cloudflare.mjs --dry-run   # builds and lets Wrangler validate the 
 
 `check:lessons` fails when a twist answer does not pass its own checks, or when the plain answer already
 passes all of them (then the twist asks for nothing new).
+
+## Adding a theme
+
+The theme colors are not typed by hand. `scripts/build-themes.mjs` reads the theme's own VS Code file,
+finds the color of each kind of code the way VS Code does, and checks that text stays readable. The top
+of that script says how to run it. Add the theme to its list, run it, and commit `src/lib/themes.ts` and
+`THEMES.md`. `npm test` then checks every theme for readable contrast.

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Notice, type NoticeData } from "./components/Notice";
 import { href, useRoute, type Route } from "./lib/router";
-import { getPrefs, useStoreVersion } from "./lib/store";
 import { linkDevice, startSync, takeKeyFromAddress, useSyncStatus } from "./lib/sync";
 import { CapstonePage } from "./pages/CapstonePage";
 import { CheckPage } from "./pages/CheckPage";
@@ -16,20 +15,6 @@ import { WorkPage } from "./pages/WorkPage";
 
 // A device link was opened: take the key out of the address before anything else reads it.
 const keyFromAddress = takeKeyFromAddress();
-
-function useTheme() {
-  useStoreVersion();
-  const theme = getPrefs().theme;
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      document.documentElement.dataset.theme = theme === "auto" ? (media.matches ? "dark" : "light") : theme;
-    };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [theme]);
-}
 
 const Mark = () => (
   <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true">
@@ -62,7 +47,6 @@ function SyncChip() {
 const section = (route: Route): "map" | "work" | "guide" | "settings" => (route.page === "work" || route.page === "guide" || route.page === "settings" ? route.page : "map");
 
 export function App() {
-  useTheme();
   const route = useRoute();
   const [notice, setNotice] = useState<NoticeData | null>(null);
   const closeNotice = useCallback(() => setNotice(null), []);
