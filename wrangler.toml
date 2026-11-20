@@ -13,5 +13,5 @@ ALLOWED_EMAILS = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "tururucoding"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "0fd8bc21-6fcf-4283-825a-66472a4ff759"
 migrations_dir = "migrations"
