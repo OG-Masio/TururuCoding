@@ -1,0 +1,17 @@
+# Cloudflare Pages settings. This file is the source of truth for the project's
+# settings, so nothing needs to be set by hand in the Cloudflare dashboard.
+name = "tururucoding"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Public value from Google Cloud (it's not a secret). Empty = sign-in hidden, progress saved per device.
+GOOGLE_CLIENT_ID = ""
+# Optional: only these Google accounts may sign in (comma separated). Empty = any Google account.
+ALLOWED_EMAILS = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tururucoding"
+database_id = "REPLACE_WITH_D1_ID"
+migrations_dir = "migrations"
