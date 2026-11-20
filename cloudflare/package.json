@@ -1,0 +1,10 @@
+{
+  "name": "tururucoding-cloudflare",
+  "private": true,
+  "description": "Cloudflare server for TururuCoding: hosts the site and syncs progress between devices. Installed and run by ../scripts/cloudflare.mjs.",
+  "type": "module",
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261120.1",
+    "wrangler": "4.166.0"
+  }
+}

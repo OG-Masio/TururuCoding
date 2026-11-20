@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-label="A small yellow bird singing on a branch">
+  <rect width="320" height="240" fill="#dff0ff"/>
+  <path d="M0 196h320" stroke="#7a5230" stroke-width="12" stroke-linecap="round"/>
+  <path d="M236 196q24-18 44-14" stroke="#7a5230" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <ellipse cx="278" cy="178" rx="13" ry="7" fill="#4c9a52" transform="rotate(-20 278 178)"/>
+  <ellipse cx="150" cy="140" rx="62" ry="50" fill="#ffd23f"/>
+  <circle cx="198" cy="98" r="34" fill="#ffd23f"/>
+  <path d="M98 142q-44-6-60 22 40 10 70-4z" fill="#f0b400"/>
+  <path d="M128 132q34-22 62 6-30 30-62-6z" fill="#f0b400"/>
+  <circle cx="208" cy="90" r="5.5" fill="#16243a"/>
+  <path d="M228 96l26 6-26 10z" fill="#f2782c"/>
+  <path d="M138 188v10M162 188v10" stroke="#f2782c" stroke-width="5" stroke-linecap="round"/>
+  <g fill="#16243a">
+    <circle cx="262" cy="52" r="6"/><path d="M267 52V24l16-5v8l-12 4v21z"/>
+    <circle cx="292" cy="76" r="5"/><path d="M296 76V54l4-1v23z"/>
+  </g>
+</svg>

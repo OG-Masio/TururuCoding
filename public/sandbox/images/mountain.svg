@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-label="Mountains under a rising sun">
+  <rect width="320" height="200" fill="#ffe9c7"/>
+  <circle cx="236" cy="70" r="30" fill="#ff9d3c"/>
+  <path d="M0 200L92 68l52 72 34-44 142 104z" fill="#3d5a80"/>
+  <path d="M92 68l24 34-18-8-12 12-14-8z" fill="#f4f7fb"/>
+  <path d="M0 200l60-52 54 30 62-44 144 66z" fill="#293f5c"/>
+</svg>
