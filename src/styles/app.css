@@ -2011,26 +2011,80 @@ kbd {
 
 /* ───────────────────────────────────────────────────────────── the tutor */
 
-/* The button that opens the chat. It waits in the bottom left corner, away from the code. */
+/*
+ * The button that opens the chat: a small robot head in a bottom corner, on the same side as the panel.
+ * It is faint, so it does not pull the eye while you read. It turns solid when you point at it.
+ */
 .tutor__open {
   position: fixed;
-  left: 14px;
+  right: 14px;
   bottom: 14px;
   z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 42px;
   height: 42px;
-  padding: 0 16px;
+  padding: 0;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: var(--ink);
   color: var(--paper);
-  font-weight: 700;
   cursor: pointer;
-  box-shadow: 4px 4px 0 var(--rule-strong);
+  opacity: 0.35;
+  transition: opacity 0.15s;
 }
 
-.tutor__open:hover {
-  background: var(--paper);
-  color: var(--ink);
+.tutor__open[data-side="left"] {
+  right: auto;
+  left: 14px;
+}
+
+.tutor__open:hover,
+.tutor__open:focus-visible {
+  opacity: 1;
+}
+
+.tutor__open svg {
+  display: block;
+}
+
+/* The eyes and the mouth are holes: they show the color of the button. */
+.tutor__face {
+  fill: var(--ink);
+}
+
+/* The words appear next to the robot while you point at it. */
+.tutor__open-label {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tutor__open[data-side="left"] .tutor__open-label {
+  right: auto;
+  left: calc(100% + 8px);
+}
+
+.tutor__open:hover .tutor__open-label,
+.tutor__open:focus-visible .tutor__open-label {
+  opacity: 1;
+}
+
+/* A touch screen has nothing to point with, so the robot is a little stronger there. */
+@media (hover: none) {
+  .tutor__open {
+    opacity: 0.6;
+  }
 }
 
 /* Shown above a piece of the lesson that was selected. */
@@ -2051,7 +2105,7 @@ kbd {
   box-shadow: 3px 3px 0 var(--ink);
 }
 
-/* On a very wide screen the panel fits beside the lesson. On other screens it lies over its left edge. */
+/* The panel opens on the right. On a very wide screen it fits beside the page. On other screens it lies over its edge. */
 .tutor__panel {
   position: fixed;
   left: 10px;
@@ -2323,10 +2377,12 @@ kbd {
 
 @media (max-width: 760px) {
   .tutor__open {
-    left: 10px;
+    right: 10px;
     bottom: 10px;
-    height: 40px;
-    padding: 0 13px;
+  }
+
+  .tutor__open[data-side="left"] {
+    left: 10px;
   }
 
   .tutor__panel,

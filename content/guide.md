@@ -105,13 +105,13 @@ A letter group followed by a number works for most properties with a size. Words
 
 ## Ask the tutor
 
-Sometimes one explanation is not enough. Lessons, quick checks and unit projects have an **Ask the tutor** button in the bottom left corner.
+Sometimes one explanation is not enough. Lessons, quick checks and unit projects have a small robot head in the bottom right corner. It is faint, so it does not get in your way. Point at it and it turns solid. Click it and the tutor opens.
 
 - Ask in your own words: "what is an id for?", "why do I need alt?".
 - The tutor sees the lesson you are on and the code in your editor. So you can ask "why does my code not work?".
 - Select a piece of the text or the code in the lesson, and a button appears to ask about exactly that part.
 - The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The site allows 80 questions a day. The count starts again at midnight UTC.
-- The panel lies over a part of the page. **Move right** puts it on the other side.
+- The panel opens on the right and lies over a part of the page. **Move left** puts it, and the robot, on the other side. The site remembers the side on this device.
 - An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
 
 The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. [Unit 20](#/unit/ai-helper), *AI in your site: build a chat helper*, teaches you to build one yourself.

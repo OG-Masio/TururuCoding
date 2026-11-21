@@ -20,7 +20,7 @@ export interface Release {
 export const releases: Release[] = [
   {
     version: "1.5",
-    date: "2026-11-21T14:28:00-05:00",
+    date: "2026-11-21T17:32:00-05:00",
     title: "Unit 20: build an AI chat helper",
     summary: "Unit 20 is written: 8 lessons that build a chat helper the proper way, on your own computer, plus a new kind of lesson page for code that does not run in the browser.",
     details: `
@@ -50,6 +50,12 @@ export const releases: Release[] = [
 - **Under the twist you tick the boxes yourself**, because the site cannot see your computer. The ticks are saved and follow you to your other devices.
 - The tutor is on these pages too. It sees the lesson, but not the files on your computer, so paste the lines you ask about.
 - Quick checks and projects of these units use the same kind of page.
+
+### The tutor is quieter
+
+- The **Ask the tutor** button is now a small robot head in the bottom **right** corner. It is faint while you work, turns solid when you point at it, and opens only when you click it.
+- The panel opens on the right. **Move left** puts the panel and the robot on the other side, and this device remembers it.
+- Fixed: with the panel on the right, closing it put the button back in the left corner. The button now stays on the side of the panel.
 
 ### What was tested, and what was not
 

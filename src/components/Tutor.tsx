@@ -26,11 +26,26 @@ const SIDE_KEY = "tc.tutor-side";
 type Side = "left" | "right";
 const savedSide = (): Side => {
   try {
-    return localStorage.getItem(SIDE_KEY) === "right" ? "right" : "left";
+    // The right side is the normal place. Only a choice for the left is remembered as such.
+    return localStorage.getItem(SIDE_KEY) === "left" ? "left" : "right";
   } catch {
-    return "left";
+    return "right";
   }
 };
+
+/** A small robot head: the sign for "an AI answers here". */
+const RobotIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="3.6" r="1.6" fill="currentColor" />
+    <rect x="11.2" y="4.4" width="1.6" height="3.2" fill="currentColor" />
+    <rect x="4" y="7" width="16" height="13" rx="3" fill="currentColor" />
+    <rect x="1.4" y="11.4" width="2" height="4.6" rx="1" fill="currentColor" />
+    <rect x="20.6" y="11.4" width="2" height="4.6" rx="1" fill="currentColor" />
+    <circle className="tutor__face" cx="9" cy="12.4" r="1.7" />
+    <circle className="tutor__face" cx="15" cy="12.4" r="1.7" />
+    <rect className="tutor__face" x="8.6" y="15.9" width="6.8" height="1.6" rx="0.8" />
+  </svg>
+);
 
 /** An answer from the model. Its Markdown is made safe before it is shown (see lib/safeMarkdown). */
 function Answer({ source }: { source: string }) {
@@ -240,8 +255,9 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
       ) : null}
 
       {!open ? (
-        <button type="button" className="tutor__open" onClick={() => setOpen(true)}>
-          Ask the tutor
+        <button type="button" className="tutor__open" data-side={side} onClick={() => setOpen(true)} aria-label="Ask the tutor">
+          <RobotIcon />
+          <span className="tutor__open-label">Ask the tutor</span>
         </button>
       ) : (
         <section
