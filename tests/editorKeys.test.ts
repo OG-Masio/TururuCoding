@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expandToSnippet, isAbbreviation } from "../src/lib/editorKeys";
+import { expandToSnippet, expandToText, isAbbreviation, suggestsItself } from "../src/lib/editorKeys";
 
 describe("short forms (Emmet)", () => {
   it("accepts real short forms", () => {
@@ -33,6 +33,25 @@ describe("short forms (Emmet)", () => {
     expect(page.startsWith("<!DOCTYPE html>\n<html lang=\"en\">")).toBe(true);
     expect(page).toContain('<meta charset="UTF-8">');
     expect(page.endsWith("</html>${0}")).toBe(true);
+  });
+
+  it("stops on the title and in the body of a new page, not in the meta lines", () => {
+    const page = expandToSnippet("!") ?? "";
+    expect(page).toContain('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    expect(page).toContain("<title>${5:Document}</title>");
+    expect(page).toMatch(/<body>\n\t\$\{6\}\n<\/body>/);
+    expect(page.match(/\$\{\d+/g)).toEqual(["${5", "${6", "${0"]);
+  });
+
+  it("shows what a short form becomes, without the stops", () => {
+    expect(expandToText("ul>li*2")).toBe("<ul>\n  <li></li>\n  <li></li>\n</ul>");
+    expect(expandToText("!")).toContain("<title>Document</title>");
+    expect(expandToText("hello world")).toBeNull();
+  });
+
+  it("suggests the page starter and forms with a symbol, and leaves plain tag names to Tab", () => {
+    for (const text of ["!", "ul>li*3", "div.card", ".card", "section#about>h2+p"]) expect(suggestsItself(text), text).toBe(true);
+    for (const text of ["p", "a", "img", "ul"]) expect(suggestsItself(text), text).toBe(false);
   });
 
   it("escapes braces so the editor does not read them as stops", () => {

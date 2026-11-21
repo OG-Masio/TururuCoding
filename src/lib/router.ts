@@ -9,7 +9,7 @@ export type Route =
   | { page: "project"; unit: string }
   | { page: "capstone"; track: string }
   | { page: "work" }
-  | { page: "guide" }
+  | { page: "guide"; tab: "guide" | "about" }
   | { page: "settings" }
   | { page: "missing" };
 
@@ -32,7 +32,8 @@ export function parseRoute(hash: string): Route {
     case "work":
       return { page: "work" };
     case "guide":
-      return { page: "guide" };
+      if (!value) return { page: "guide", tab: "guide" };
+      return value === "about" ? { page: "guide", tab: "about" } : { page: "missing" };
     case "settings":
       return { page: "settings" };
     default:
@@ -49,6 +50,7 @@ export const href = {
   capstone: (track: string) => `#/capstone/${track}`,
   work: () => "#/work",
   guide: () => "#/guide",
+  about: () => "#/guide/about",
   settings: () => "#/settings",
 };
 

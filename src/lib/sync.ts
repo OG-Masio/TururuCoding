@@ -256,6 +256,19 @@ export function deviceLink(): string | null {
   return `${base}/#tc-key=${config.key}`;
 }
 
+/**
+ * A request to the server this device is linked to, with the device key.
+ * Returns null when this device is not linked. The caller reads the answer itself.
+ */
+export function linkedFetch(path: string, init: RequestInit = {}): Promise<Response> | null {
+  if (!loadConfig() || !config) return null;
+  return fetch(api(path), {
+    ...init,
+    headers: { ...(init.headers ?? {}), authorization: `Bearer ${config.key}`, ...(init.body ? { "content-type": "application/json" } : {}) },
+    cache: "no-store",
+  });
+}
+
 /** Asks the address whether a TururuCoding sync server lives there. */
 export async function serverInfo(server = ""): Promise<{ found: boolean; configured: boolean }> {
   try {

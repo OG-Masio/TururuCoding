@@ -1,16 +1,18 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Bench } from "../components/Bench";
 import { CodeBox } from "../components/CodeBox";
 import { Frame } from "../components/Frame";
 import { Markdown } from "../components/Markdown";
 import { Notice, type NoticeData } from "../components/Notice";
 import { TitleBlock } from "../components/TitleBlock";
+import { Tutor } from "../components/Tutor";
 import { findUnit, loadProjectDoc, units, type Unit } from "../lib/course";
 import { download } from "../lib/download";
 import { useDebouncedSave, useLoaded, useScrollTop, useTitle } from "../lib/hooks";
 import { toProject, type Files, type Project } from "../lib/lesson";
 import { buildStandalone } from "../lib/preview";
 import { href } from "../lib/router";
+import { asContext, codeAsText } from "../lib/tutor";
 import { saveCode, savedCode, store, useStoreVersion, type ProjectRecord } from "../lib/store";
 import { Missing } from "./Missing";
 
@@ -85,6 +87,18 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
     const steps = record.steps.includes(index) ? record.steps.filter((n) => n !== index) : [...record.steps, index].sort((a, b) => a - b);
     update({ steps });
   };
+
+  const tutorContext = useMemo(
+    () =>
+      asContext([
+        "This is the unit project: a small page that uses every lesson of the unit. The learner builds it step by step.",
+        project.intro,
+        ...project.steps.map((step, i) => `Step ${i + 1}: ${step.title}\n${step.body}`),
+        project.makeItYours && `Make it yours:\n${project.makeItYours}`,
+        `The finished example:\n${codeAsText(project.result, project.fileOrder)}`,
+      ]),
+    [project],
+  );
 
   const nextUnit = units[unit.number];
   const done = record.s === "done";
@@ -270,6 +284,7 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
       <aside className="lesson__bench" aria-label="Your code and its result">
         <Bench label="Your code" files={files} fileOrder={project.fileOrder} onChange={setFiles} checks={project.checks} onChecks={setResults} placeholder="Build your page here…" />
       </aside>
+      <Tutor what="project" pageId={`project:${unit.id}`} title={`Project of unit ${unit.number}: ${project.title}`} context={tutorContext} files={files} fileOrder={project.fileOrder} />
       <Notice notice={notice} onClose={closeNotice} />
     </div>
   );

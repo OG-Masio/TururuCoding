@@ -2,6 +2,7 @@
  * Keys that make typing HTML faster, the way VS Code does it.
  *
  *   Tab            expands a short form (Emmet): "p" becomes <p></p>, "ul>li*3" a whole list
+ *   Enter          accepts a short form that a suggestion is shown for: "!" becomes a whole page
  *   Tab            jumps over a closing tag, bracket or quote that is right after the cursor
  *   Tab            otherwise indents the line (Shift+Tab takes the indent away)
  *   Ctrl+Shift+Enter   opens a new line above
@@ -9,11 +10,11 @@
  * Ctrl+Enter (a new line below, from anywhere in the line) and the keys for
  * moving and copying lines already come with the editor.
  */
-import { acceptCompletion, completionStatus, snippet } from "@codemirror/autocomplete";
+import { acceptCompletion, autocompletion, closeCompletion, completionStatus, snippet, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { indentWithTab } from "@codemirror/commands";
 import { syntaxTree } from "@codemirror/language";
-import { EditorSelection, type EditorState } from "@codemirror/state";
-import type { Command, KeyBinding } from "@codemirror/view";
+import { EditorSelection, EditorState, Prec, type Extension } from "@codemirror/state";
+import { keymap, type Command } from "@codemirror/view";
 import expand, { extract } from "emmet";
 
 const HTML_TAGS = new Set(
@@ -84,32 +85,123 @@ export function expandToSnippet(abbreviation: string): string | null {
     .replace(new RegExp(`${FIELD_OPEN}(\\d+)${FIELD_MID}([^${FIELD_CLOSE}]*)${FIELD_CLOSE}`, "g"), (_, index: string, placeholder: string) =>
       placeholder ? `\${${index}:${placeholder}}` : `\${${index}}`,
     );
+  // The page starter ("!") has stops inside its <meta> lines. A beginner never changes those,
+  // so they become plain text: the first stop is the page title, the next one the body.
+  const calm = template.replace(/<meta\b[^>]*>/g, (tag) => tag.replace(/\$\{\d+:([^}]*)\}/g, "$1"));
   // The last Tab always lands after everything that was inserted.
-  return template + "${0}";
+  return calm + "${0}";
+}
+
+/** The text a short form becomes, without the stops. Shown next to a suggestion. */
+export function expandToText(abbreviation: string): string | null {
+  try {
+    const html = expand(abbreviation, { type: "markup", syntax: "html", options: { "output.field": (_index: number, placeholder: string) => placeholder ?? "" } });
+    return html && html !== abbreviation ? html.replace(/\t/g, "  ") : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Short forms that also get a suggestion, which Enter accepts: "!" and every
+ * form with a symbol in it ("ul>li*3", "div.card"). A plain tag name ("p") is
+ * left to Tab, so that Enter after a word always starts a new line.
+ */
+export const suggestsItself = (abbreviation: string) => abbreviation === "!" || !isBareWord(abbreviation);
+
+interface Found {
+  from: number;
+  to: number;
+  abbreviation: string;
+}
+
+/** The short form in front of the cursor, when there is one and it is meant as one. */
+function abbreviationAt(state: EditorState, filename: string): Found | null {
+  if (!/\.html?$/i.test(filename)) return null;
+  const range = state.selection.main;
+  if (!range.empty || state.selection.ranges.length > 1) return null;
+  if (!inMarkup(state, range.head)) return null;
+  const line = state.doc.lineAt(range.head);
+  const before = line.text.slice(0, range.head - line.from);
+  const found = extract(before, before.length, { type: "markup", lookAhead: false });
+  if (!found || !isAbbreviation(found.abbreviation)) return null;
+  // A short form stands alone: at the start of the line or right after a tag.
+  // In "Read the menu" the last word is part of a sentence, so it stays a word.
+  const lead = before.slice(0, found.start);
+  if (lead.trim() !== "" && !lead.endsWith(">")) return null;
+  // "<a>link|</a>": one word right before a closing tag is text. Tab jumps out instead.
+  if (isBareWord(found.abbreviation) && /^\s*<\//.test(line.text.slice(range.head - line.from))) return null;
+  return { from: line.from + found.start, to: line.from + found.end, abbreviation: found.abbreviation };
+}
+
+/**
+ * Should this short form get a suggestion here? The page starter only when it stands
+ * alone on its line and the file has no page yet: a page inside a page is never wanted.
+ */
+function suggestHere(state: EditorState, found: Found): boolean {
+  if (!suggestsItself(found.abbreviation)) return false;
+  if (found.abbreviation !== "!" && found.abbreviation !== "!!!") return true;
+  const line = state.doc.lineAt(found.from);
+  const alone = line.text.slice(0, found.from - line.from).trim() === "" && line.text.slice(found.to - line.from).trim() === "";
+  return alone && !/<html[\s>]/i.test(state.doc.toString());
 }
 
 /** Tab: expand the short form in front of the cursor. */
 export const expandAbbreviation = (filename: string): Command => (view) => {
-  if (!/\.html?$/i.test(filename)) return false;
-  const { state } = view;
-  const range = state.selection.main;
-  if (!range.empty || state.selection.ranges.length > 1) return false;
-  if (!inMarkup(state, range.head)) return false;
-  const line = state.doc.lineAt(range.head);
-  const before = line.text.slice(0, range.head - line.from);
-  const found = extract(before, before.length, { type: "markup", lookAhead: false });
-  if (!found || !isAbbreviation(found.abbreviation)) return false;
-  // A short form stands alone: at the start of the line or right after a tag.
-  // In "Read the menu" the last word is part of a sentence, so it stays a word.
-  const lead = before.slice(0, found.start);
-  if (lead.trim() !== "" && !lead.endsWith(">")) return false;
-  // "<a>link|</a>": one word right before a closing tag is text. Tab jumps out instead.
-  if (isBareWord(found.abbreviation) && /^\s*<\//.test(line.text.slice(range.head - line.from))) return false;
-  const template = expandToSnippet(found.abbreviation);
-  if (!template) return false;
-  snippet(template)(view, null, line.from + found.start, line.from + found.end);
+  const found = abbreviationAt(view.state, filename);
+  const template = found && expandToSnippet(found.abbreviation);
+  if (!found || !template) return false;
+  snippet(template)(view, null, found.from, found.to);
   return true;
 };
+
+/**
+ * Enter: accept the short form, the way VS Code does for "!".
+ * Only while its suggestion is on the screen or on its way. After Esc, Enter is a new line again.
+ */
+export const acceptAbbreviation = (filename: string): Command => (view) => {
+  if (completionStatus(view.state) === null) return false;
+  const found = abbreviationAt(view.state, filename);
+  if (!found || !suggestHere(view.state, found)) return false;
+  const template = expandToSnippet(found.abbreviation);
+  if (!template) return false;
+  closeCompletion(view);
+  snippet(template)(view, null, found.from, found.to);
+  return true;
+};
+
+const previewNode = (text: string) => {
+  const box = document.createElement("pre");
+  box.className = "emmet-preview";
+  box.textContent = text;
+  return box;
+};
+
+/** The suggestion for a short form: shows what it becomes before you accept it. */
+export const abbreviationCompletions =
+  (filename: string) =>
+  (context: CompletionContext): CompletionResult | null => {
+    const found = abbreviationAt(context.state, filename);
+    if (!found || found.to !== context.pos || !suggestHere(context.state, found)) return null;
+    const template = expandToSnippet(found.abbreviation);
+    const text = expandToText(found.abbreviation);
+    if (!template || !text) return null;
+    return {
+      from: found.from,
+      to: found.to,
+      filter: false,
+      options: [
+        {
+          label: found.abbreviation,
+          detail: found.abbreviation === "!" ? "a whole empty page" : "short form",
+          type: "text",
+          boost: 99,
+          info: () => previewNode(text),
+          apply: (view, completion, from, to) => snippet(template)(view, completion, from, to),
+        },
+      ],
+    };
+  };
 
 /** What Tab jumps over when it is right after the cursor. */
 const JUMP = /^(<\/[A-Za-z][\w:-]*\s*>|["'`)\]}>])/;
@@ -143,11 +235,22 @@ export const insertBlankLineAbove: Command = (view) => {
   return true;
 };
 
-/** The key list for one file. Order matters: the first command that says "done" wins. */
-export const fastKeys = (filename: string): KeyBinding[] => [
-  { key: "Tab", run: (view) => completionStatus(view.state) === "active" && acceptCompletion(view) },
-  { key: "Tab", run: expandAbbreviation(filename) },
-  { key: "Tab", run: tabOut },
-  { key: "Shift-Mod-Enter", run: insertBlankLineAbove },
-  indentWithTab,
-];
+/** Everything in this file as one editor extension, for one file. Order matters: the first command that says "done" wins. */
+export const fastKeys = (filename: string): Extension => {
+  // One list for the whole life of the editor: the editor recognises a source of suggestions by being the very same function.
+  const suggestions = [{ autocomplete: abbreviationCompletions(filename) }];
+  return [
+    // Before the editor's own Enter (a new line).
+    Prec.high(keymap.of([{ key: "Enter", run: acceptAbbreviation(filename) }])),
+    keymap.of([
+      { key: "Tab", run: (view) => completionStatus(view.state) === "active" && acceptCompletion(view) },
+      { key: "Tab", run: expandAbbreviation(filename) },
+      { key: "Tab", run: tabOut },
+      { key: "Shift-Mod-Enter", run: insertBlankLineAbove },
+      indentWithTab,
+    ]),
+    EditorState.languageData.of(() => suggestions),
+    // A list that is on the screen can be used at once. (The editor normally waits a moment, and a fast Enter or Tab would miss it.)
+    autocompletion({ interactionDelay: 0 }),
+  ];
+};

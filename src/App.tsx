@@ -53,9 +53,19 @@ export function App() {
 
   useEffect(() => {
     startSync();
-    if (keyFromAddress) {
-      void linkDevice(keyFromAddress).then((result) => setNotice({ text: result.ok ? "This device is linked. Your progress now syncs." : `This device was not linked. ${result.message}` }));
-    }
+    const link = (key: string) =>
+      void linkDevice(key).then((result) => setNotice({ text: result.ok ? "This device is linked. Your progress now syncs." : `This device was not linked. ${result.message}` }));
+    if (keyFromAddress) link(keyFromAddress);
+    // The device link was opened in a tab that already shows the site: the browser does not load the page again, it only changes the address.
+    const onAddress = () => {
+      const key = takeKeyFromAddress();
+      if (!key) return;
+      link(key);
+      // The key is out of the address now. Tell the router, so it shows the map.
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    };
+    window.addEventListener("hashchange", onAddress);
+    return () => window.removeEventListener("hashchange", onAddress);
   }, []);
 
   const current = section(route);
@@ -90,7 +100,7 @@ export function App() {
       {route.page === "project" ? <ProjectPage unitId={route.unit} /> : null}
       {route.page === "capstone" ? <CapstonePage trackId={route.track} /> : null}
       {route.page === "work" ? <WorkPage /> : null}
-      {route.page === "guide" ? <GuidePage /> : null}
+      {route.page === "guide" ? <GuidePage tab={route.tab} /> : null}
       {route.page === "settings" ? <SettingsPage /> : null}
       {route.page === "missing" ? <Missing /> : null}
 

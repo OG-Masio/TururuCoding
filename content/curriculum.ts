@@ -632,6 +632,33 @@ export const tracks: TrackSpec[] = [
         },
       },
       {
+        id: "ai-helper",
+        title: "AI in your site: build a chat helper",
+        summary: "Add a chat helper to a site the proper way: on your own server, with no middleman and no surprise bill.",
+        outcomes: [
+          "Explain what a chat model does with the messages you send it",
+          "Call a model from a Worker, so no key ever reaches the browser",
+          "Write the instructions that make a model answer the way you want",
+          "Show the answer while it is being written",
+          "Set a daily limit so the helper stays free",
+        ],
+        runsIn: "computer",
+        lessons: [
+          "How a chat model works: messages in, text out",
+          "Why the browser must never talk to the model itself",
+          "Call a model from a Worker with Workers AI",
+          "The system prompt: tell the model who it is helping",
+          "Give the model context: the page and the user's code",
+          "Streaming: show the answer while it is written",
+          "Limits: a daily budget, and who is allowed to ask",
+          "The same code with another model or another provider",
+        ],
+        project: {
+          title: "A tutor for your own site",
+          summary: "Read the tutor of TururuCoding line by line, then build a small chat helper for a page of your own and put it online.",
+        },
+      },
+      {
         id: "aws",
         title: "AWS basics: servers and managed databases",
         summary: "Accounts, permissions, servers and managed Postgres, with billing under control.",

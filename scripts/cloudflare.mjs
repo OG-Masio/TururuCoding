@@ -203,6 +203,8 @@ const writeConfig = (keyHash) => {
     assets: { directory: "../dist", binding: "ASSETS", run_worker_first: ["/api/*"] },
     durable_objects: { bindings: [{ name: "STORE", class_name: "SyncStore" }] },
     migrations: [{ tag: "v1", new_sqlite_classes: ["SyncStore"] }],
+    // Workers AI, for the tutor. It runs in your own account; cloudflare/tutor.ts keeps it inside the free daily amount.
+    ai: { binding: "AI" },
     // Only a hash of the device key; the key itself is never stored here.
     vars: { SYNC_KEY_HASH: keyHash },
     observability: { enabled: true },

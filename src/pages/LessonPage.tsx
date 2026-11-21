@@ -1,14 +1,16 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Bench } from "../components/Bench";
 import { CodeBox } from "../components/CodeBox";
 import { Frame } from "../components/Frame";
 import { Markdown } from "../components/Markdown";
 import { Notice, type NoticeData } from "../components/Notice";
 import { TitleBlock } from "../components/TitleBlock";
+import { Tutor } from "../components/Tutor";
 import { findLesson, lessonAfter, lessonBefore, loadLessonDoc, type LessonInfo } from "../lib/course";
 import { useDebouncedSave, useLoaded, useScrollTop, useTitle } from "../lib/hooks";
 import { toLesson, type Files, type Lesson } from "../lib/lesson";
 import { go, href } from "../lib/router";
+import { asContext, codeAsText } from "../lib/tutor";
 import { getPrefs, lessonState, saveCode, savedCode, setLessonState, touchLesson, useStoreVersion } from "../lib/store";
 import { Missing } from "./Missing";
 
@@ -97,6 +99,20 @@ function LessonView({ info, lesson }: { info: LessonInfo; lesson: Lesson }) {
       setNotice({ text, action: { label: "Undo", run: () => setFiles(before) } });
     } else setNotice({ text });
   };
+
+  // What the tutor is told about this lesson. The most important parts come first: long text is cut at the end.
+  const tutorContext = useMemo(
+    () =>
+      asContext([
+        lesson.intro,
+        `The answer code of this lesson:\n${codeAsText(lesson.answer, lesson.fileOrder)}`,
+        `The explanation of the answer:\n${lesson.explanation}`,
+        lesson.twist && `The twist (a small change the learner makes alone):\n${lesson.twist}`,
+        `The twist answer:\n${codeAsText(lesson.twistAnswer, lesson.fileOrder)}`,
+        lesson.whatChanged && `What changed in the twist, and why:\n${lesson.whatChanged}`,
+      ]),
+    [lesson],
+  );
 
   const hasStarter = !isEmpty(lesson.starter);
   const passed = lesson.checks.length > 0 && lesson.checks.every((_, i) => checkResults[i]);
@@ -282,6 +298,7 @@ function LessonView({ info, lesson }: { info: LessonInfo; lesson: Lesson }) {
         />
       </aside>
 
+      <Tutor what="lesson" pageId={`lesson:${info.id}`} title={`Unit ${info.unit.number} (${info.unit.title}), lesson ${info.number}: ${lesson.title}`} context={tutorContext} files={files} fileOrder={lesson.fileOrder} />
       <Notice notice={notice} onClose={closeNotice} />
     </div>
   );

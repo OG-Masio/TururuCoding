@@ -1799,3 +1799,532 @@ kbd {
       box-shadow 0.12s ease;
   }
 }
+
+/* ───────────────────────────────────────────── tabs inside a page (Guide) */
+
+.tabs {
+  display: inline-flex;
+  margin-bottom: 26px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tabs a {
+  padding: 6px 20px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tabs a + a {
+  border-left: 2px solid var(--ink);
+}
+
+.tabs a:hover {
+  background: var(--paper-2);
+}
+
+.tabs a[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.tabs a:focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
+}
+
+/* ─────────────────── version history: the revision block of a drawing */
+
+.revisions {
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+}
+
+.revision + .revision {
+  border-top: 2px solid var(--ink);
+}
+
+.revision > summary {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  cursor: pointer;
+  list-style: none;
+}
+
+.revision > summary::-webkit-details-marker {
+  display: none;
+}
+
+.revision > summary:hover,
+.revision[open] > summary {
+  background: var(--paper-2);
+}
+
+.revision > summary:focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
+}
+
+.revision__num {
+  display: grid;
+  place-items: center;
+  border-right: 1.5px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.revision__what {
+  display: grid;
+  gap: 3px;
+  padding: 13px 16px 12px;
+}
+
+.revision__what strong {
+  font-size: 18.5px;
+  line-height: 1.25;
+}
+
+.revision__what > span {
+  color: var(--pencil);
+  font-size: 15.5px;
+  line-height: 1.45;
+}
+
+.revision__what code {
+  font-size: 0.92em;
+  padding: 0 4px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+/* Says what a click does. */
+.revision__what::after {
+  content: "Show everything that changed";
+  margin-top: 3px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.revision[open] .revision__what::after {
+  content: "Hide the details";
+}
+
+.revision__when {
+  padding: 15px 16px 0 6px;
+  font-size: 14.5px;
+  color: var(--pencil);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.revision__details {
+  padding: 16px 20px 20px 84px;
+  border-top: 1.5px solid var(--rule-strong);
+}
+
+.revision__details .prose h3:first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .revision > summary {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .revision__num {
+    grid-row: span 2;
+    font-size: 20px;
+  }
+
+  .revision__when {
+    grid-column: 2;
+    order: -1;
+    padding: 11px 14px 0;
+  }
+
+  .revision__what {
+    padding: 2px 14px 12px;
+  }
+
+  .revision__details {
+    padding: 14px 14px 16px;
+  }
+}
+
+/* What a short form becomes, shown next to its suggestion. */
+.cm-editor .cm-tooltip.cm-completionInfo {
+  max-width: min(460px, 60vw);
+  padding: 8px 10px;
+}
+
+.emmet-preview {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--code-fg);
+}
+
+.cm-editor .cm-tooltip-autocomplete ul li {
+  padding: 3px 8px;
+}
+
+.cm-editor .cm-completionDetail {
+  font-style: normal;
+  opacity: 0.8;
+}
+
+/* ───────────────────────────────────────────────────────────── the tutor */
+
+/* The button that opens the chat. It waits in the bottom left corner, away from the code. */
+.tutor__open {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 40;
+  height: 42px;
+  padding: 0 16px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--rule-strong);
+}
+
+.tutor__open:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Shown above a piece of the lesson that was selected. */
+.tutor__pick {
+  position: fixed;
+  z-index: 45;
+  transform: translateX(-50%);
+  height: 36px;
+  padding: 0 12px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--hi);
+  color: var(--hi-ink);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* On a very wide screen the panel fits beside the lesson. On other screens it lies over its left edge. */
+.tutor__panel {
+  position: fixed;
+  left: 10px;
+  bottom: 10px;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(372px, calc(100vw - 20px));
+  height: min(680px, calc(100dvh - var(--header-h) - 20px));
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--ink);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+.tutor__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 7px 12px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.tutor__head h2 {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.tutor__panel[data-side="right"] {
+  left: auto;
+  right: 16px;
+}
+
+.tutor__count {
+  margin: 0;
+  padding: 4px 12px;
+  border-bottom: 1.5px solid var(--rule-strong);
+  font-size: 13.5px;
+  color: var(--pencil);
+}
+
+.tutor__headbtn:first-of-type {
+  margin-left: auto;
+}
+
+.tutor__headbtn {
+  height: 28px;
+  padding: 0 9px;
+  border: 1.5px solid currentColor;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tutor__headbtn:hover {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+
+.tutor__log {
+  overflow-y: auto;
+  padding: 12px 12px 4px;
+  overscroll-behavior: contain;
+}
+
+.tutor__log > p,
+.tutor__hello p,
+.tutor__note p {
+  margin: 0 0 8px;
+}
+
+.tutor__note {
+  padding: 10px 12px 4px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+
+.tutor__turn {
+  margin-bottom: 14px;
+}
+
+.tutor__who {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pencil);
+}
+
+.tutor__turn--you {
+  padding: 8px 10px;
+  border-left: 4px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.tutor__question {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tutor__quoted {
+  margin: 2px 0 6px;
+  padding-left: 8px;
+  border-left: 2px solid var(--rule-strong);
+  color: var(--pencil);
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tutor__answer {
+  overflow-wrap: anywhere;
+}
+
+.tutor__answer > * {
+  margin-bottom: 8px;
+}
+
+.tutor__answer pre {
+  margin: 6px 0 10px;
+  padding: 9px 10px;
+  font-size: 13.5px;
+  overflow-x: auto;
+}
+
+.tutor__answer h1,
+.tutor__answer h2,
+.tutor__answer h3,
+.tutor__answer h4 {
+  font-size: 16px;
+  margin: 12px 0 4px;
+}
+
+.tutor__answer ul,
+.tutor__answer ol {
+  padding-left: 20px;
+}
+
+.tutor__wait {
+  margin: 0;
+  color: var(--pencil);
+  font-style: italic;
+}
+
+.tutor__problem {
+  margin-bottom: 12px;
+  padding: 9px 11px;
+  border: 2px solid var(--warn);
+  border-radius: var(--radius);
+}
+
+.tutor__problem p {
+  margin: 0 0 8px;
+}
+
+.tutor__problem p:last-child {
+  margin-bottom: 0;
+}
+
+.tutor__form {
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px 10px;
+  border-top: 2px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.tutor__about {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.tutor__about span {
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tutor__about button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--link);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tutor__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tutor__quick button {
+  padding: 3px 9px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.tutor__quick button:hover:not([disabled]) {
+  border-color: var(--ink);
+}
+
+.tutor__quick button[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.tutor__form textarea {
+  width: 100%;
+  min-height: 58px;
+  max-height: 160px;
+  padding: 7px 9px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  color: #16243a;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.tutor__form textarea::placeholder {
+  color: #5d6a80;
+}
+
+.tutor__send {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tutor__send span {
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+
+/* Room for the button, so it never covers the last lines of a lesson. */
+.lesson__pad {
+  padding-bottom: 110px;
+}
+
+@media (max-width: 1040px) {
+  .lesson__pad {
+    padding-bottom: 100px;
+  }
+}
+
+@media (max-width: 760px) {
+  .tutor__open {
+    left: 10px;
+    bottom: 10px;
+    height: 40px;
+    padding: 0 13px;
+  }
+
+  .tutor__panel,
+  .tutor__panel[data-side="right"] {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: min(78dvh, 640px);
+    border-width: 2px 0 0;
+    box-shadow: none;
+  }
+
+  /* The sheet is as wide as the phone: there is no other side. */
+  .tutor__headbtn--side {
+    display: none;
+  }
+}
+
+/* The panel takes the keyboard when it opens. It is a whole box, so it needs no focus ring of its own. */
+.tutor__panel:focus {
+  outline: none;
+}
+
+.tutor__panel:focus-visible {
+  box-shadow: 6px 6px 0 var(--ink);
+}

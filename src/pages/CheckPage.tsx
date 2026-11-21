@@ -1,14 +1,16 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Bench } from "../components/Bench";
 import { CodeBox } from "../components/CodeBox";
 import { Frame } from "../components/Frame";
 import { Markdown } from "../components/Markdown";
 import { Notice, type NoticeData } from "../components/Notice";
 import { TitleBlock } from "../components/TitleBlock";
+import { Tutor } from "../components/Tutor";
 import { findUnit, loadCheckDoc, units, type Unit } from "../lib/course";
 import { useDebouncedSave, useLoaded, useScrollTop, useTitle } from "../lib/hooks";
 import { toQuickCheck, type Files, type QuickCheck } from "../lib/lesson";
 import { go, href } from "../lib/router";
+import { asContext, codeAsText } from "../lib/tutor";
 import { lessonState, saveCode, savedCode, setLessonState, useStoreVersion } from "../lib/store";
 import { Missing } from "./Missing";
 
@@ -47,6 +49,18 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
     setTouched(true);
   };
   useDebouncedSave(files, (value) => saveCode(unit.checkId, value), touched);
+
+  const tutorContext = useMemo(
+    () =>
+      asContext([
+        "This is the quick check of the unit: one task that uses everything the unit teaches. The learner can skip the unit when nothing in it is new.",
+        check.intro,
+        `The task:\n${check.task}`,
+        `The answer code:\n${codeAsText(check.answer, check.fileOrder)}`,
+        check.explanation && `The explanation:\n${check.explanation}`,
+      ]),
+    [check],
+  );
 
   const passedCount = check.checks.filter((_, i) => results[i]).length;
   const nextUnit = units[unit.number];
@@ -156,6 +170,7 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
       <aside className="lesson__bench" aria-label="Your code and its result">
         <Bench label="Your code" files={files} fileOrder={check.fileOrder} onChange={setFiles} checks={check.checks} onChecks={setResults} placeholder="Build it here…" />
       </aside>
+      <Tutor what="quick check" pageId={`check:${unit.id}`} title={`Quick check of unit ${unit.number}: ${unit.title}`} context={tutorContext} files={files} fileOrder={check.fileOrder} />
       <Notice notice={notice} onClose={closeNotice} />
     </div>
   );

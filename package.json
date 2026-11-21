@@ -1,7 +1,7 @@
 {
   "name": "tururucoding",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.2.0",
   "description": "A personal, continuous-learning coding website: answer first, then copy and twist.",
   "type": "module",
   "engines": {

@@ -3,7 +3,7 @@ import { html } from "@codemirror/lang-html";
 import { javascript } from "@codemirror/lang-javascript";
 import { syntaxHighlighting } from "@codemirror/language";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
-import { keymap, placeholder as placeholderExtension } from "@codemirror/view";
+import { placeholder as placeholderExtension } from "@codemirror/view";
 import { EditorView, basicSetup } from "codemirror";
 import { useEffect, useRef } from "react";
 import { fastKeys } from "../lib/editorKeys";
@@ -48,7 +48,7 @@ export function CodeEditor({ filename, value, onChange, placeholder }: Props) {
         doc: initial.current,
         extensions: [
           basicSetup,
-          keymap.of(fastKeys(filename)),
+          fastKeys(filename),
           languageExtension(filename),
           ...highlighters.map((highlighter) => syntaxHighlighting(highlighter)),
           darkness.current.of(EditorView.darkTheme.of(darkRef.current)),

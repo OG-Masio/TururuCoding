@@ -34,6 +34,7 @@ The editor has the same fast-typing keys as VS Code. The **Keys** button in the 
 | --- | --- |
 | `Tab` | Jumps over the closing tag, bracket or quote right after the cursor. With the cursor in `you|</p>`, Tab puts it after `</p>`. Then `Enter` starts the next line. |
 | `Tab` | Expands a short form into full HTML (this is called Emmet). Type `p` and press Tab: you get `<p></p>` with the cursor inside. Type your text, press Tab again, and the cursor jumps out after `</p>`. |
+| `!` then `Enter` | Starts a whole empty page. A small list opens and shows what you will get. Enter accepts it. |
 | `Ctrl` `Enter` | Starts a new line below, from anywhere in the line. You do not have to go to the end first. |
 | `Ctrl` `Shift` `Enter` | Starts a new line above. |
 | `End` and `Home` | Go to the end or the start of the line. |
@@ -58,7 +59,24 @@ Short forms worth knowing:
 
 Short forms only expand for real HTML tags. A normal word like `hello` stays a word.
 
+**The suggestion list.** For `!` and for every short form with a symbol in it (`ul>li*3`, `div.card`), a small list opens while you type. It shows the HTML you will get. Press `Enter` or `Tab` to accept it. Press `Esc` to close the list and keep what you typed. A plain tag name such as `p` expands with Tab only, so Enter after a word always starts a new line.
+
+After `!`, the cursor stands on the page title. Type your title, press Tab, and you are inside the `body`. The list for `!` only opens in a file that has no page yet, because a page inside a page is never what you want.
+
 Use them after you have typed a tag by hand a few times. First learn what `<p>` is, then let Tab write it for you.
+
+## Ask the tutor
+
+Sometimes one explanation is not enough. Lessons, quick checks and unit projects have an **Ask the tutor** button in the bottom left corner.
+
+- Ask in your own words: "what is an id for?", "why do I need alt?".
+- The tutor sees the lesson you are on and the code in your editor. So you can ask "why does my code not work?".
+- Select a piece of the text or the code in the lesson, and a button appears to ask about exactly that part.
+- The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The site allows 80 questions a day. The count starts again at midnight UTC.
+- The panel lies over a part of the page. **Move right** puts it on the other side.
+- An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
+
+The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. The unit *AI in your site: build a chat helper* in track 4 teaches you to build one yourself.
 
 ## Themes
 

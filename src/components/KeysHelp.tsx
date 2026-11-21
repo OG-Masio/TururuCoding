@@ -7,6 +7,7 @@ const alt = isMac ? "Option" : "Alt";
 const keys: { keys: string[]; does: string; example?: string }[] = [
   { keys: ["Tab"], does: "Jump over the closing tag, bracket or quote right after the cursor.", example: "you|</p>  →  you</p>|" },
   { keys: ["Tab"], does: "Expand a short form into full HTML. Tab again moves to the next empty spot, then out.", example: "p   a   ul>li*3   div.card   !" },
+  { keys: ["!", "Enter"], does: "Start a whole empty page. A small list shows what you get, and Enter accepts it. The same works for every short form with a symbol in it. Esc closes the list.", example: "!   ul>li*3   div.card" },
   { keys: [mod, "Enter"], does: "Start a new line below, from anywhere in the line." },
   { keys: [mod, "Shift", "Enter"], does: "Start a new line above." },
   { keys: ["End"], does: "Go to the end of the line. Home goes to the start." },

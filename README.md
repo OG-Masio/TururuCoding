@@ -5,15 +5,18 @@ A personal, continuous-learning coding website.
 The method is **answer first**: every lesson shows the finished code and explains it. You copy it, then
 you twist it (a small change of your own). No answer is ever hidden.
 
-- **The map** shows the whole course: 8 tracks, 37 units, 306 lessons, a project for every unit and a
+- **The map** shows the whole course: 8 tracks, 38 units, 314 lessons, a project for every unit and a
   capstone for every track.
 - **Lessons** have an editor with a live result next to it. Nothing to install.
-- **Fast typing** like in VS Code: Tab expands short forms (Emmet) and jumps out of a closing tag. The
-  Keys button in the editor lists everything.
+- **Fast typing** like in VS Code: Tab expands short forms (Emmet) and jumps out of a closing tag, and
+  `!` then Enter writes a whole empty page. The Keys button in the editor lists everything.
+- **A tutor** you can ask when a lesson is not clear. It is an open AI model that runs in your own
+  Cloudflare account (Workers AI), inside the free daily amount.
 - **Themes:** TururuCoding's own look, or the colors of 45 well-known VS Code themes, for the code areas
   or for the whole site. See `THEMES.md` for who made each one.
 - **Progress and code** are saved in the browser and can sync between your devices through your own
   Cloudflare account.
+- **About** (a tab of the Guide) lists every version with its date and what changed.
 
 Unit 1 (HTML) is written. The other units are planned in `content/curriculum.ts` and get written one
 unit at a time.
@@ -37,7 +40,8 @@ published site in Settings, Your devices (paste the whole device link) if you wa
 
 ## Put it online (Cloudflare)
 
-One Worker serves the site and syncs your devices. It is designed to fit Cloudflare's free plan.
+One Worker serves the site, syncs your devices and runs the tutor. It is designed to fit Cloudflare's
+free plan.
 
 **Windows:** double-click `cloud-deploy.bat`. **Any OS:** `npm run cloud:deploy`.
 
@@ -73,12 +77,28 @@ Any linked device can show it again under Settings, Your devices.
   them the script makes a new key, and you link your devices again (your data stays).
 - Code typed in a lesson runs in a sandboxed frame that cannot read the site's storage.
 
+### The tutor and what it costs
+
+- The tutor is `POST /api/tutor`. Like every `/api` route it needs the device key, so nobody else can
+  use it.
+- The Worker asks an open model through Cloudflare's Workers AI binding (`env.AI`). There is no API key
+  and no other company in between. The model and its backup are named at the top of
+  `cloudflare/tutor.ts`.
+- Workers AI gives an account a free amount of use per day. `DAILY_LIMIT` in `cloudflare/tutor.ts` (80
+  questions a day) is sized so that even the longest questions stay inside it. The comment next to it
+  shows the sum. Do the sum again before you change the model or raise the limit.
+- A question sends the lesson text, your code and your question to Cloudflare to be answered. The chat
+  is not stored on the server.
+- An answer from the model is shown as text only: any HTML in it is displayed, never run
+  (`src/lib/safeMarkdown.ts`).
+
 ## How it is put together
 
 ```
 content/
   curriculum.ts          the map: every track, unit, lesson title, project and capstone
   guide.md               the Guide page
+  changelog.ts           every version, with its date and what changed (the About tab)
   units/<unit>/          the written lessons of one unit
     01-….md … NN-….md    lessons
     check.md             the quick check ("skip this unit")
@@ -91,12 +111,15 @@ src/
   lib/themes.ts          the colors of the VS Code themes (generated, do not edit by hand)
   lib/theme.ts           puts the chosen theme on the page
   lib/editorKeys.ts      the fast-typing keys
+  lib/tutor.ts           asks the tutor and reads its answer while it is written
+  lib/safeMarkdown.ts    shows an answer of the tutor without running anything in it
   lib/store.ts           progress and code in the browser
   lib/sync.ts            syncing with the server
   lib/course.ts          ids, numbers, progress, loading lessons
-  components/            editor, result frame, workbench, answer box
+  components/            editor, result frame, workbench, answer box, tutor
   pages/                 map, unit, lesson, quick check, project, capstone, my work, guide, settings
-cloudflare/worker.ts     the server: static files + /api/sync (a Durable Object with SQLite)
+cloudflare/worker.ts     the server: static files, /api/sync (a Durable Object with SQLite), /api/tutor
+cloudflare/tutor.ts      the tutor's limits, its instructions for the model, and the call to the model
 scripts/cloudflare.mjs   the publish script behind cloud-deploy.bat
 scripts/check-lessons.mjs  opens every lesson in Chrome and runs its checks
 scripts/build-themes.mjs   reads real VS Code theme files and writes src/lib/themes.ts and THEMES.md
@@ -162,6 +185,12 @@ A small change to make.
 - `check.md` uses `## Task`, `## Checks`, `## Answer`, `## Explanation`.
 - `project.md` uses `## Result`, `## Starter`, `## Steps` (with `### Step …` headings), `## Checks`,
   `## Make it yours`, `## On your computer`.
+
+## Releasing a version
+
+Every update of the site gets an entry at the top of `content/changelog.ts`: the version, the time it
+was finished, one or two sentences, and the full story in Markdown. The About tab shows the list. Set
+the same version in `package.json`.
 
 ## Check your work
 

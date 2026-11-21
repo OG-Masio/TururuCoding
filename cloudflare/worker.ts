@@ -1,22 +1,27 @@
 /**
  * TururuCoding on Cloudflare.
  *
- * One Worker does two things:
+ * One Worker does three things:
  *  1. Serves the built site (../dist) as static files. Those requests never run
  *     this code.
  *  2. Syncs your progress and your code between your devices under /api/sync.
  *     A Durable Object with a small SQLite database holds the records.
+ *  3. Answers questions about a lesson under /api/tutor, with an AI model that
+ *     runs in this same Cloudflare account (Workers AI). See tutor.ts.
  *
  * Every /api route except /api/info requires "Authorization: Bearer <device key>".
  * The server only knows a SHA-256 hash of that key (SYNC_KEY_HASH), never the
  * key itself.
  */
 import { DurableObject } from "cloudflare:workers";
+import { DAILY_LIMIT, LIMITS, askModel, buildMessages, describeAiError, readTutorRequest, utcDay, type AiBinding } from "./tutor";
 
 export interface Env {
   ASSETS: Fetcher;
   STORE: DurableObjectNamespace<SyncStore>;
   SYNC_KEY_HASH?: string;
+  /** Workers AI. Missing on a server that was published before the tutor existed. */
+  AI?: AiBinding;
 }
 
 const MAX_BODY_BYTES = 1024 * 1024; // one push
@@ -56,6 +61,28 @@ export class SyncStore extends DurableObject<Env> {
       seq INTEGER NOT NULL
     )`);
     this.sql.exec("CREATE INDEX IF NOT EXISTS records_seq ON records (seq)");
+    // How many questions the tutor answered on each day (UTC).
+    this.sql.exec("CREATE TABLE IF NOT EXISTS tutor_days (day TEXT PRIMARY KEY, used INTEGER NOT NULL)");
+  }
+
+  /** Questions the tutor answered on this day. */
+  tutorUsed(day: string): number {
+    const row = this.sql.exec("SELECT used FROM tutor_days WHERE day = ?", day).toArray()[0] as { used: number } | undefined;
+    return row?.used ?? 0;
+  }
+
+  /** Counts one question, unless today's limit is reached. Calls run one at a time, so two devices cannot both take the last one. */
+  takeTutorTurn(day: string, limit: number): { ok: boolean; used: number } {
+    this.sql.exec("DELETE FROM tutor_days WHERE day < ?", day);
+    const used = this.tutorUsed(day);
+    if (used >= limit) return { ok: false, used };
+    this.sql.exec("INSERT INTO tutor_days (day, used) VALUES (?, 1) ON CONFLICT (day) DO UPDATE SET used = used + 1", day);
+    return { ok: true, used: used + 1 };
+  }
+
+  /** Gives a question back when the model never started to answer. */
+  returnTutorTurn(day: string): void {
+    this.sql.exec("UPDATE tutor_days SET used = MAX(used - 1, 0) WHERE day = ?", day);
   }
 
   /** Records changed after change number `after`, oldest first. */
@@ -109,6 +136,7 @@ const CORS: Record<string, string> = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "authorization, content-type",
   "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-expose-headers": "x-tutor-used, x-tutor-limit",
   "access-control-max-age": "86400",
 };
 
@@ -150,6 +178,46 @@ const problemWith = (record: unknown): string | null => {
   return null;
 };
 
+// ------------------------------------------------------------------- tutor
+
+/** POST /api/tutor: one question in, the model's answer out, as a stream. */
+async function handleTutor(request: Request, env: Env): Promise<Response> {
+  if (!env.AI) return fail(503, "This server has no tutor yet. Publish the site again to add it.");
+
+  const length = Number(request.headers.get("content-length") ?? "NaN");
+  if (Number.isFinite(length) && length > LIMITS.body) return fail(413, "The question is too large.");
+  const raw = await request.text();
+  if (raw.length > LIMITS.body) return fail(413, "The question is too large.");
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return fail(400, "The request is not valid JSON.");
+  }
+  const asked = readTutorRequest(body);
+  if (!asked.ok) return fail(400, asked.error);
+
+  // Count the question before the model runs. This is what keeps the tutor inside the free amount.
+  const day = utcDay();
+  const store = storeStub(env);
+  const turn = await store.takeTutorTurn(day, DAILY_LIMIT);
+  if (!turn.ok) {
+    return json({ error: `You asked the tutor ${DAILY_LIMIT} questions today. That is the daily limit that keeps it free. It starts again at midnight UTC.`, used: turn.used, limit: DAILY_LIMIT }, 429);
+  }
+
+  try {
+    const { stream } = await askModel(env.AI, buildMessages(asked.value));
+    return new Response(stream, {
+      headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-tutor-used": String(turn.used), "x-tutor-limit": String(DAILY_LIMIT) },
+    });
+  } catch (error) {
+    console.error("tutor", error);
+    await store.returnTutorTurn(day);
+    const problem = describeAiError(error);
+    return fail(problem.status, problem.message);
+  }
+}
+
 // ------------------------------------------------------------------ routes
 
 async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
@@ -157,7 +225,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
 
   // Public: lets the site recognise a TururuCoding server.
   if (path === "/api/info") {
-    return json({ app: "tururucoding", api: 1, configured: !!env.SYNC_KEY_HASH });
+    return json({ app: "tururucoding", api: 2, configured: !!env.SYNC_KEY_HASH, tutor: !!env.AI });
   }
 
   if (!env.SYNC_KEY_HASH) return fail(503, "This server has no device key yet. Run the Cloudflare setup again.");
@@ -168,6 +236,13 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
   if (path === "/api/stats" && request.method === "GET") {
     return json(await storeStub(env).stats());
   }
+
+  // How many questions are left today.
+  if (path === "/api/tutor" && request.method === "GET") {
+    return json({ on: !!env.AI, used: await storeStub(env).tutorUsed(utcDay()), limit: DAILY_LIMIT });
+  }
+
+  if (path === "/api/tutor" && request.method === "POST") return handleTutor(request, env);
 
   if (path === "/api/sync/changes" && request.method === "GET") {
     const after = Math.max(0, Math.floor(Number(url.searchParams.get("after") ?? 0)) || 0);
