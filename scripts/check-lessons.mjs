@@ -107,6 +107,25 @@ const main = async () => {
       await page.reload();
       await page.waitForSelector(".titleblock h1");
       const title = await page.textContent(".titleblock h1");
+
+      // A lesson that runs on your own computer has no editor to test. Check that the page is complete.
+      if (await page.$(".lesson--computer")) {
+        const steps = (await page.$$(".step")).length;
+        const boxes = (await page.$$(".codebox")).length;
+        const self = (await page.$$(".checks--self li")).length;
+        if (steps !== 4) fail(id, `expected the four steps, found ${steps}`);
+        if (boxes < 2) fail(id, "expected the answer and the twist answer as code");
+        if (self === 0) fail(id, "the twist has nothing to check yourself");
+        if ((await page.$$(".step:nth-of-type(3) pre")).length === 0) fail(id, "the Run it step has no command");
+        await page.click(".checks--self input");
+        if (!(await page.isChecked(".checks--self input"))) fail(id, "a box under Check yourself cannot be ticked");
+        const real = errors.filter((e) => !/favicon/.test(e));
+        if (real.length) fail(id, `browser errors: ${real.join(" | ")}`);
+        if (shots) await page.screenshot({ path: join(out, `lesson-${id}.png`), fullPage: true });
+        console.log(`  ok    ${id}  ${title}  (on your computer; ${self} things to check yourself)`);
+        continue;
+      }
+
       const total = (await page.$$(".checks li")).length;
       if (total === 0) fail(id, "the twist has no checks");
 
@@ -138,6 +157,15 @@ const main = async () => {
       await page.evaluate(() => localStorage.clear());
       await page.reload();
       await page.waitForSelector(".titleblock h1");
+      if (await page.$(".lesson--computer")) {
+        if ((await page.$$(".codebox")).length === 0) fail(`${unit} ${kind}`, "expected its code");
+        if (await page.$(".lesson__bench")) fail(`${unit} ${kind}`, "a page for your own computer must not have an editor");
+        const real = errors.filter((e) => !/favicon/.test(e));
+        if (real.length) fail(`${unit} ${kind}`, `browser errors: ${real.join(" | ")}`);
+        if (shots) await page.screenshot({ path: join(out, `${kind}-${unit}.png`), fullPage: true });
+        console.log(`  ok    ${unit} ${kind}  (on your computer)`);
+        continue;
+      }
       const total = (await page.$$(".checks li")).length;
       const before = await settledChecks(page);
       if (total && before.every(Boolean)) fail(`${unit} ${kind}`, "all checks already pass with the starter code");

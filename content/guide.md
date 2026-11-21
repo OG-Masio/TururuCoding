@@ -114,7 +114,7 @@ Sometimes one explanation is not enough. Lessons, quick checks and unit projects
 - The panel lies over a part of the page. **Move right** puts it on the other side.
 - An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
 
-The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. The unit *AI in your site: build a chat helper* in track 4 teaches you to build one yourself.
+The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. [Unit 20](#/unit/ai-helper), *AI in your site: build a chat helper*, teaches you to build one yourself.
 
 ## Themes
 
@@ -140,6 +140,8 @@ The [map](#/) shows the whole road. Units marked *Not written yet* are planned: 
 ## Where the code runs
 
 - **In the site editor:** HTML, CSS and JavaScript lessons. Nothing to install.
-- **On your computer:** capstones, and lessons about tools such as Git, databases and deploying. The site gives you the steps and the code. Unit 7 sets up your computer.
+- **On your computer:** capstones, and lessons about tools such as Git, databases, servers and deploying. The site gives you the steps and the code. Unit 7 sets up your computer.
 
 Each unit page says which one it uses.
+
+A lesson that runs on your computer has the same four steps, but no editor on the page. Step 3 gives you the commands to type in your terminal and shows what you should see. Under the twist there is a list called *Check yourself*: the site cannot see your computer, so you tick each box when you see it with your own eyes. Unit 20 is the first unit of this kind.

@@ -63,6 +63,8 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
   );
 
   const passedCount = check.checks.filter((_, i) => results[i]).length;
+  /** A unit about servers and tools: the code runs on your computer, so the page has no editor. */
+  const computer = unit.runsIn === "computer";
   const nextUnit = units[unit.number];
 
   const skipUnit = () => {
@@ -71,15 +73,17 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
   };
 
   return (
-    <div className="lesson" data-view={view}>
-      <div className="viewswitch" role="group" aria-label="What to show">
-        <button type="button" aria-pressed={view === "read"} onClick={() => setView("read")}>
-          Quick check
-        </button>
-        <button type="button" aria-pressed={view === "code"} onClick={() => setView("code")}>
-          Your code
-        </button>
-      </div>
+    <div className={computer ? "lesson lesson--computer" : "lesson"} data-view={view}>
+      {computer ? null : (
+        <div className="viewswitch" role="group" aria-label="What to show">
+          <button type="button" aria-pressed={view === "read"} onClick={() => setView("read")}>
+            Quick check
+          </button>
+          <button type="button" aria-pressed={view === "code"} onClick={() => setView("code")}>
+            Your code
+          </button>
+        </div>
+      )}
 
       <main className="lesson__pad">
         <TitleBlock
@@ -130,21 +134,23 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
             fileOrder={check.fileOrder}
             label="Answer"
             actions={
-              <button
-                type="button"
-                className="btn btn--small btn--quiet"
-                onClick={() => {
-                  const before = files;
-                  setFiles({ ...check.answer });
-                  setView("code");
-                  setNotice({ text: "The answer is in your editor.", action: { label: "Undo", run: () => setFiles(before) } });
-                }}
-              >
-                Put it in my editor
-              </button>
+              computer ? null : (
+                <button
+                  type="button"
+                  className="btn btn--small btn--quiet"
+                  onClick={() => {
+                    const before = files;
+                    setFiles({ ...check.answer });
+                    setView("code");
+                    setNotice({ text: "The answer is in your editor.", action: { label: "Undo", run: () => setFiles(before) } });
+                  }}
+                >
+                  Put it in my editor
+                </button>
+              )
             }
           />
-          <Frame files={check.answer} label="Result" />
+          {computer ? null : <Frame files={check.answer} label="Result" />}
           {check.explanation ? <Markdown source={check.explanation} /> : null}
         </section>
 
@@ -167,10 +173,12 @@ function CheckView({ unit, check }: { unit: Unit; check: QuickCheck }) {
         </div>
       </main>
 
-      <aside className="lesson__bench" aria-label="Your code and its result">
-        <Bench label="Your code" files={files} fileOrder={check.fileOrder} onChange={setFiles} checks={check.checks} onChecks={setResults} placeholder="Build it here…" />
-      </aside>
-      <Tutor what="quick check" pageId={`check:${unit.id}`} title={`Quick check of unit ${unit.number}: ${unit.title}`} context={tutorContext} files={files} fileOrder={check.fileOrder} />
+      {computer ? null : (
+        <aside className="lesson__bench" aria-label="Your code and its result">
+          <Bench label="Your code" files={files} fileOrder={check.fileOrder} onChange={setFiles} checks={check.checks} onChecks={setResults} placeholder="Build it here…" />
+        </aside>
+      )}
+      <Tutor what="quick check" pageId={`check:${unit.id}`} title={`Quick check of unit ${unit.number}: ${unit.title}`} context={tutorContext} files={computer ? {} : files} fileOrder={computer ? [] : check.fileOrder} />
       <Notice notice={notice} onClose={closeNotice} />
     </div>
   );

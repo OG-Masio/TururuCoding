@@ -103,17 +103,21 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
   const nextUnit = units[unit.number];
   const done = record.s === "done";
   const passedCount = project.checks.filter((_, i) => results[i]).length;
+  /** A unit about servers and tools: the code runs on your computer, so the page has no editor. */
+  const computer = unit.runsIn === "computer";
 
   return (
-    <div className="lesson" data-view={view}>
-      <div className="viewswitch" role="group" aria-label="What to show">
-        <button type="button" aria-pressed={view === "read"} onClick={() => setView("read")}>
-          Project
-        </button>
-        <button type="button" aria-pressed={view === "code"} onClick={() => setView("code")}>
-          Your code
-        </button>
-      </div>
+    <div className={computer ? "lesson lesson--computer" : "lesson"} data-view={view}>
+      {computer ? null : (
+        <div className="viewswitch" role="group" aria-label="What to show">
+          <button type="button" aria-pressed={view === "read"} onClick={() => setView("read")}>
+            Project
+          </button>
+          <button type="button" aria-pressed={view === "code"} onClick={() => setView("code")}>
+            Your code
+          </button>
+        </div>
+      )}
 
       <main className="lesson__pad">
         <TitleBlock
@@ -136,12 +140,12 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
             <span className="step__num">1</span>
             <h2>See the finished example</h2>
           </div>
-          <Frame files={project.result} label="What you will build" max={520} />
+          {computer ? null : <Frame files={project.result} label="What you will build" max={520} />}
           <CodeBox
             files={project.result}
             fileOrder={project.fileOrder}
             label="Finished example"
-            actions={
+            actions={computer ? null : (
               <button
                 type="button"
                 className="btn btn--small btn--quiet"
@@ -154,7 +158,7 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
               >
                 Put it in my editor
               </button>
-            }
+            )}
           />
         </section>
 
@@ -164,7 +168,9 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
             <h2>Build it step by step</h2>
           </div>
           <p className="step__body">
-            Each step shows the code to add and explains it. Type it into your editor, look at the result, then tick the step.{" "}
+            {computer
+              ? "Each step shows what to do and explains it. Do it on your computer, in your own editor and terminal, then tick the step."
+              : "Each step shows the code to add and explains it. Type it into your editor, look at the result, then tick the step."}{" "}
             <span className="muted">
               {record.steps.length} of {project.steps.length} steps ticked.
             </span>
@@ -221,11 +227,13 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
             <h2>Keep it</h2>
           </div>
           {project.onYourComputer ? <Markdown source={project.onYourComputer} /> : null}
-          <div className="row" style={{ margin: "12px 0 18px" }}>
-            <button type="button" className="btn" onClick={() => download("index.html", buildStandalone(files), "text/html")}>
-              Download my page as index.html
-            </button>
-          </div>
+          {computer ? null : (
+            <div className="row" style={{ margin: "12px 0 18px" }}>
+              <button type="button" className="btn" onClick={() => download("index.html", buildStandalone(files), "text/html")}>
+                Download my page as index.html
+              </button>
+            </div>
+          )}
           <div className="field">
             <label htmlFor="project-url">Where is it online? (optional)</label>
             <input
@@ -281,10 +289,12 @@ function ProjectView({ unit, project }: { unit: Unit; project: Project }) {
         </div>
       </main>
 
-      <aside className="lesson__bench" aria-label="Your code and its result">
-        <Bench label="Your code" files={files} fileOrder={project.fileOrder} onChange={setFiles} checks={project.checks} onChecks={setResults} placeholder="Build your page here…" />
-      </aside>
-      <Tutor what="project" pageId={`project:${unit.id}`} title={`Project of unit ${unit.number}: ${project.title}`} context={tutorContext} files={files} fileOrder={project.fileOrder} />
+      {computer ? null : (
+        <aside className="lesson__bench" aria-label="Your code and its result">
+          <Bench label="Your code" files={files} fileOrder={project.fileOrder} onChange={setFiles} checks={project.checks} onChecks={setResults} placeholder="Build your page here…" />
+        </aside>
+      )}
+      <Tutor what="project" pageId={`project:${unit.id}`} title={`Project of unit ${unit.number}: ${project.title}`} context={tutorContext} files={computer ? {} : files} fileOrder={computer ? [] : project.fileOrder} />
       <Notice notice={notice} onClose={closeNotice} />
     </div>
   );

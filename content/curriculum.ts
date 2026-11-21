@@ -635,6 +635,8 @@ export const tracks: TrackSpec[] = [
       },
       {
         id: "ai-helper",
+        folder: "ai-helper",
+        ready: true,
         title: "AI in your site: build a chat helper",
         summary: "Add a chat helper to a site the proper way: on your own server, with no middleman and no surprise bill.",
         outcomes: [

@@ -12,6 +12,7 @@ import { toLesson, type Files, type Lesson } from "../lib/lesson";
 import { go, href } from "../lib/router";
 import { asContext, codeAsText } from "../lib/tutor";
 import { getPrefs, lessonState, saveCode, savedCode, setLessonState, touchLesson, useStoreVersion } from "../lib/store";
+import { ComputerLesson } from "./ComputerLesson";
 import { Missing } from "./Missing";
 
 const sameFiles = (a: Files, b: Files) => {
@@ -64,6 +65,8 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
       </main>
     );
   }
+  // Lessons about servers and tools run on your own computer. They get a page without an editor.
+  if (info.unit.runsIn === "computer") return <ComputerLesson key={lessonId} info={info} lesson={loaded.value} />;
   return <LessonView key={lessonId} info={info} lesson={loaded.value} />;
 }
 

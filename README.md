@@ -19,8 +19,8 @@ you twist it (a small change of your own). No answer is ever hidden.
   Cloudflare account.
 - **About** (a tab of the Guide) lists every version with its date and what changed.
 
-Units 1 (HTML) and 2 (CSS) are written. The other units are planned in `content/curriculum.ts` and get
-written one unit at a time.
+Units 1 (HTML), 2 (CSS) and 20 (an AI chat helper) are written. The other units are planned in
+`content/curriculum.ts` and get written one unit at a time.
 
 ## Run it on your computer
 
@@ -123,6 +123,7 @@ src/
   lib/course.ts          ids, numbers, progress, loading lessons
   components/            editor, result frame, workbench, answer box, tutor
   pages/                 map, unit, lesson, quick check, project, capstone, my work, guide, settings
+  pages/ComputerLesson.tsx  the lesson page for code that runs on your own computer
 cloudflare/worker.ts     the server: static files, /api/sync (a Durable Object with SQLite), /api/tutor
 cloudflare/tutor.ts      the tutor's limits, its instructions for the model, and the call to the model
 scripts/cloudflare.mjs   the publish script behind cloud-deploy.bat
@@ -187,6 +188,10 @@ A small change to make.
 - A lesson can have several files (`index.html`, `style.css`, `script.js`). A `<link rel="stylesheet">`
   or `<script src>` that names one of them works in the result.
 - Checks run inside the result frame. Write each as one JavaScript expression.
+- A unit with `runsIn: "computer"` in `curriculum.ts` is about code that cannot run in the browser (a
+  server, a tool). Its lessons get a page without an editor. They have no `## Starter` and no
+  `## Checks`. They have `## Run it` (the commands, and what you should see) and `## Check yourself`
+  (a list of things the learner ticks by hand).
 - `check.md` uses `## Task`, `## Checks`, `## Answer`, `## Explanation`.
 - `project.md` uses `## Result`, `## Starter`, `## Steps` (with `### Step …` headings), `## Checks`,
   `## Make it yours`, `## On your computer`.

@@ -320,7 +320,8 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
             {ready && empty ? (
               <div className="tutor__hello">
                 <p>
-                  Ask anything about this {what}, in your own words. The tutor sees the {what} and the code in your editor.
+                  Ask anything about this {what}, in your own words.{" "}
+                  {fileOrder.length ? `The tutor sees the ${what} and the code in your editor.` : `The tutor sees the ${what}. It cannot see the files on your computer, so paste the lines you ask about.`}
                 </p>
                 <p className="small muted">Tip: select a piece of the text or the code on the page to ask about exactly that piece.</p>
               </div>
@@ -373,7 +374,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
                 </div>
               ) : null}
               <div className="tutor__quick">
-                {(quote ? ["Explain this part", "Show me an example of this"] : quickQuestions).map((question) => (
+                {(quote ? ["Explain this part", "Show me an example of this"] : fileOrder.length ? quickQuestions : quickQuestions.slice(0, 2)).map((question) => (
                   <button key={question} type="button" disabled={busy !== null || left === 0} onClick={() => ask(question)}>
                     {question}
                   </button>

@@ -19,6 +19,50 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.5",
+    date: "2026-11-21T14:28:00-05:00",
+    title: "Unit 20: build an AI chat helper",
+    summary: "Unit 20 is written: 8 lessons that build a chat helper the proper way, on your own computer, plus a new kind of lesson page for code that does not run in the browser.",
+    details: `
+### Unit 20 is written
+
+- **AI in your site: build a chat helper** has 8 lessons, a quick check and a project. It was written out of order, before the units in between, because you asked for it.
+- You build one small project, a helper for a bakery page, and every lesson adds one part to it.
+- It uses JavaScript in every lesson. Every line is explained, but the language itself is taught in units 4 to 6. If the code is hard to read, this unit will be easier after those.
+
+| Lesson | You build |
+| --- | --- |
+| 1. Messages in, text out | The list of messages a model gets, printed with Node. No AI yet |
+| 2. The Worker in the middle | A page that asks your own small server, and why a key must never be in the page |
+| 3. Call a model | The Worker asks a real model through Cloudflare's AI binding |
+| 4. The system prompt | Instructions that decide who the helper is and how it answers |
+| 5. Context | The text of the page travels with the question, so the helper knows your facts |
+| 6. Streaming | The answer appears while it is written |
+| 7. Limits | A key for who may ask, and a daily count that keeps it free |
+| 8. Another model | A backup model, and what changes with another provider |
+
+- **The project:** read the real tutor of this site with a table that says where each lesson lives in its code, turn the helper into one for a page of your own, and put it online with its key and its daily limit.
+
+### Lessons that run on your computer
+
+- Code for a server cannot run in the site's editor. Lessons of such units have a new page: the same four steps, without the editor.
+- **Step 3 is "Copy it and run it"**: the commands to type in your terminal, and what you should see.
+- **Under the twist you tick the boxes yourself**, because the site cannot see your computer. The ticks are saved and follow you to your other devices.
+- The tutor is on these pages too. It sees the lesson, but not the files on your computer, so paste the lines you ask about.
+- Quick checks and projects of these units use the same kind of page.
+
+### What was tested, and what was not
+
+- Every piece of code in the 8 lessons was run, stage by stage, with a stand-in for the AI model: the answers and the twist answers.
+- The finished helper was run in a real browser against a local Worker: the key, the daily count, streaming, the backup model.
+- **Not tested: the real model, and the commands that talk to your Cloudflare account** (\`wrangler login\`, \`wrangler kv namespace create\`, \`wrangler deploy\`, \`wrangler secret put\`). They need your account. If one of them answers differently from what the lesson says, tell me what it printed.
+
+### Fixed
+
+- In explanations, a piece of code in the middle of a sentence was shown as a dark heading. Only the code a point starts with is a heading now.
+`,
+  },
+  {
     version: "1.4",
     date: "2026-11-21T14:14:00-05:00",
     title: "Unit 2: CSS",

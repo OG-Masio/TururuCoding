@@ -26,6 +26,10 @@ interface Props {
 
 /** Lesson text. The Markdown comes from this site's own lesson files. */
 export function Markdown({ source, variant }: Props) {
-  const html = useMemo(() => marked.parse(source, { async: false }), [source]);
+  const html = useMemo(() => {
+    const parsed = marked.parse(source, { async: false });
+    // In an explanation, a point that starts with a piece of code shows that code as its heading.
+    return variant === "explain" ? parsed.replace(/<li>(\s*(?:<p>)?)<code>/g, '<li>$1<code class="lead">') : parsed;
+  }, [source, variant]);
   return <div className={variant === "explain" ? "prose prose--explain" : "prose"} dangerouslySetInnerHTML={{ __html: html }} />;
 }

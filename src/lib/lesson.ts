@@ -160,7 +160,19 @@ export interface Lesson {
   twistAnswer: Files;
   twistAnswerProse: string;
   whatChanged: string;
+  /** Lessons that run on your computer: the steps to run the code, and what you should see. */
+  runIt: string;
+  /** Lessons that run on your computer: things you check with your own eyes. */
+  selfChecks: string[];
 }
+
+/** "- text" lines of a section, as a list. */
+const listItems = (markdown: string | undefined): string[] =>
+  (markdown ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim());
 
 export function toLesson(doc: ParsedDoc): Lesson {
   const answer = section(doc, "answer");
@@ -183,6 +195,8 @@ export function toLesson(doc: ParsedDoc): Lesson {
     twistAnswer: { ...answer.files, ...(twistAnswer?.files ?? {}) },
     twistAnswerProse: twistAnswer?.prose ?? "",
     whatChanged: section(doc, "what changed")?.prose ?? "",
+    runIt: section(doc, "run it")?.prose ?? "",
+    selfChecks: listItems(section(doc, "check yourself")?.prose),
   };
 }
 

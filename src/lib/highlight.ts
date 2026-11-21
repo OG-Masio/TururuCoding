@@ -20,6 +20,9 @@ export const languageFor = (fileOrLang: string): Language | null => {
     case "js":
     case "mjs":
     case "javascript":
+    // Settings files. JSON is a small part of JavaScript, and .jsonc is JSON with comments.
+    case "json":
+    case "jsonc":
       return javascriptLanguage;
     case "jsx":
       return jsxLanguage;

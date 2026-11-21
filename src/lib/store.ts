@@ -241,6 +241,8 @@ export type LessonState = "done" | "skipped" | "started";
 export interface LessonRecord {
   s: LessonState;
   at: number;
+  /** Lessons on your computer: the numbers of the things you ticked under "Check yourself". */
+  ticks?: number[];
 }
 
 export interface CodeRecord {
@@ -276,7 +278,20 @@ export const lessonState = (id: string): LessonState | undefined => store.get<Le
 
 export const setLessonState = (id: string, s: LessonState | null) => {
   if (s === null) store.remove(`lesson:${id}`);
-  else store.set(`lesson:${id}`, { s, at: Date.now() } satisfies LessonRecord);
+  else {
+    const ticks = store.get<LessonRecord>(`lesson:${id}`)?.ticks;
+    store.set(`lesson:${id}`, { s, at: Date.now(), ...(ticks?.length ? { ticks } : {}) } satisfies LessonRecord);
+  }
+};
+
+export const lessonTicks = (id: string): number[] => store.get<LessonRecord>(`lesson:${id}`)?.ticks ?? [];
+
+/** Ticks or unticks one thing under "Check yourself". */
+export const toggleLessonTick = (id: string, index: number) => {
+  const record = store.get<LessonRecord>(`lesson:${id}`);
+  const before = record?.ticks ?? [];
+  const ticks = before.includes(index) ? before.filter((n) => n !== index) : [...before, index].sort((a, b) => a - b);
+  store.set(`lesson:${id}`, { s: record?.s ?? "started", at: Date.now(), ticks } satisfies LessonRecord);
 };
 
 /** "started" never replaces "done" or "skipped". */
