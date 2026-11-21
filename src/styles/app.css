@@ -1320,6 +1320,10 @@ span.codebox__file {
   background: var(--code-active);
 }
 
+.cm-editor.cm-has-selection .cm-activeLine {
+  background: transparent;
+}
+
 .cm-editor .cm-activeLineGutter {
   background: var(--code-active);
   color: var(--code-fg);
@@ -2327,4 +2331,67 @@ kbd {
 
 .tutor__panel:focus-visible {
   box-shadow: 6px 6px 0 var(--ink);
+}
+
+/* ──────────────────────────────────────── editor additions of version 1.3 */
+
+/* The two tag names that change together. */
+.cm-editor .cm-linkedTag {
+  border-bottom: 2px solid var(--code-hi);
+}
+
+/* "Wrap with": the small bar at the top of the editor. */
+.cm-editor .cm-panels {
+  background: var(--code-bar);
+  color: var(--code-fg);
+  border-bottom: 1.5px solid var(--code-line);
+}
+
+.cm-wrap-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 7px 10px;
+  font-family: var(--font);
+  font-size: 14.5px;
+}
+
+.cm-wrap-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.cm-wrap-panel input {
+  width: 230px;
+  max-width: 60vw;
+  padding: 3px 8px;
+  border: 2px solid var(--code-hi);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: var(--mono);
+  font-size: 14.5px;
+}
+
+.cm-wrap-panel input::placeholder {
+  color: var(--code-dim);
+}
+
+.cm-wrap-hint {
+  color: var(--code-dim);
+}
+
+.cm-wrap-hint[data-problem="true"] {
+  color: var(--code-warn);
+}
+
+/* The word that answers a click on Format. */
+.bench__said {
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--code-dim);
+  white-space: nowrap;
 }

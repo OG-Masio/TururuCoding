@@ -4,6 +4,8 @@ declare module "emmet" {
     type?: "markup" | "stylesheet";
     syntax?: string;
     options?: Record<string, unknown>;
+    /** Text to wrap. A list gives one repeated element per entry ("ul>li*"). */
+    text?: string | string[];
   }
   interface Extracted {
     abbreviation: string;

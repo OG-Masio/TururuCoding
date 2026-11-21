@@ -2,6 +2,7 @@
  * Keys that make typing HTML faster, the way VS Code does it.
  *
  *   Tab            expands a short form (Emmet): "p" becomes <p></p>, "ul>li*3" a whole list
+ *   Tab            in CSS: "m10" becomes margin: 10px;  "df" becomes display: flex;  (see cssShortForms.ts)
  *   Enter          accepts a short form that a suggestion is shown for: "!" becomes a whole page
  *   Tab            jumps over a closing tag, bracket or quote that is right after the cursor
  *   Tab            otherwise indents the line (Shift+Tab takes the indent away)
@@ -16,6 +17,7 @@ import { syntaxTree } from "@codemirror/language";
 import { EditorSelection, EditorState, Prec, type Extension } from "@codemirror/state";
 import { keymap, type Command } from "@codemirror/view";
 import expand, { extract } from "emmet";
+import { cssToSnippet, cssToText, inDeclarations, isCssShortForm } from "./cssShortForms";
 
 const HTML_TAGS = new Set(
   (
@@ -113,16 +115,36 @@ interface Found {
   from: number;
   to: number;
   abbreviation: string;
+  /** The language the short form is written in. */
+  kind: "html" | "css";
+}
+
+/** Where is the cursor: in the text of a page, where CSS declarations go, or somewhere short forms do not work? */
+function placeAt(state: EditorState, pos: number, filename: string): "html" | "css" | null {
+  if (/\.css$/i.test(filename)) return inDeclarations(state, pos) ? "css" : null;
+  if (!/\.html?$/i.test(filename)) return null;
+  if (inDeclarations(state, pos)) return "css";
+  return inMarkup(state, pos) ? "html" : null;
 }
 
 /** The short form in front of the cursor, when there is one and it is meant as one. */
 function abbreviationAt(state: EditorState, filename: string): Found | null {
-  if (!/\.html?$/i.test(filename)) return null;
   const range = state.selection.main;
   if (!range.empty || state.selection.ranges.length > 1) return null;
-  if (!inMarkup(state, range.head)) return null;
+  const kind = placeAt(state, range.head, filename);
+  if (!kind) return null;
   const line = state.doc.lineAt(range.head);
   const before = line.text.slice(0, range.head - line.from);
+
+  if (kind === "css") {
+    const found = extract(before, before.length, { type: "stylesheet", lookAhead: false });
+    if (!found || !isCssShortForm(found.abbreviation)) return null;
+    // Only where a property starts: at the start of the line, or right after "{" or ";". Never in a value.
+    const lead = before.slice(0, found.start).trimEnd();
+    if (lead !== "" && !/[{;"']$/.test(lead)) return null;
+    return { from: line.from + found.start, to: line.from + found.end, abbreviation: found.abbreviation, kind };
+  }
+
   const found = extract(before, before.length, { type: "markup", lookAhead: false });
   if (!found || !isAbbreviation(found.abbreviation)) return null;
   // A short form stands alone: at the start of the line or right after a tag.
@@ -131,14 +153,19 @@ function abbreviationAt(state: EditorState, filename: string): Found | null {
   if (lead.trim() !== "" && !lead.endsWith(">")) return null;
   // "<a>link|</a>": one word right before a closing tag is text. Tab jumps out instead.
   if (isBareWord(found.abbreviation) && /^\s*<\//.test(line.text.slice(range.head - line.from))) return null;
-  return { from: line.from + found.start, to: line.from + found.end, abbreviation: found.abbreviation };
+  return { from: line.from + found.start, to: line.from + found.end, abbreviation: found.abbreviation, kind };
 }
+
+const snippetFor = (found: Found) => (found.kind === "css" ? cssToSnippet(found.abbreviation) : expandToSnippet(found.abbreviation));
+const textFor = (found: Found) => (found.kind === "css" ? cssToText(found.abbreviation) : expandToText(found.abbreviation));
 
 /**
  * Should this short form get a suggestion here? The page starter only when it stands
  * alone on its line and the file has no page yet: a page inside a page is never wanted.
+ * A CSS short form always: no CSS property starts with "m10" or "df", so nothing is lost.
  */
 function suggestHere(state: EditorState, found: Found): boolean {
+  if (found.kind === "css") return true;
   if (!suggestsItself(found.abbreviation)) return false;
   if (found.abbreviation !== "!" && found.abbreviation !== "!!!") return true;
   const line = state.doc.lineAt(found.from);
@@ -149,7 +176,7 @@ function suggestHere(state: EditorState, found: Found): boolean {
 /** Tab: expand the short form in front of the cursor. */
 export const expandAbbreviation = (filename: string): Command => (view) => {
   const found = abbreviationAt(view.state, filename);
-  const template = found && expandToSnippet(found.abbreviation);
+  const template = found && snippetFor(found);
   if (!found || !template) return false;
   snippet(template)(view, null, found.from, found.to);
   return true;
@@ -163,7 +190,7 @@ export const acceptAbbreviation = (filename: string): Command => (view) => {
   if (completionStatus(view.state) === null) return false;
   const found = abbreviationAt(view.state, filename);
   if (!found || !suggestHere(view.state, found)) return false;
-  const template = expandToSnippet(found.abbreviation);
+  const template = snippetFor(found);
   if (!template) return false;
   closeCompletion(view);
   snippet(template)(view, null, found.from, found.to);
@@ -183,8 +210,8 @@ export const abbreviationCompletions =
   (context: CompletionContext): CompletionResult | null => {
     const found = abbreviationAt(context.state, filename);
     if (!found || found.to !== context.pos || !suggestHere(context.state, found)) return null;
-    const template = expandToSnippet(found.abbreviation);
-    const text = expandToText(found.abbreviation);
+    const template = snippetFor(found);
+    const text = textFor(found);
     if (!template || !text) return null;
     return {
       from: found.from,
@@ -193,10 +220,10 @@ export const abbreviationCompletions =
       options: [
         {
           label: found.abbreviation,
-          detail: found.abbreviation === "!" ? "a whole empty page" : "short form",
+          detail: found.kind === "css" ? text : found.abbreviation === "!" ? "a whole empty page" : "short form",
           type: "text",
           boost: 99,
-          info: () => previewNode(text),
+          info: found.kind === "css" ? undefined : () => previewNode(text),
           apply: (view, completion, from, to) => snippet(template)(view, completion, from, to),
         },
       ],

@@ -35,6 +35,8 @@ The editor has the same fast-typing keys as VS Code. The **Keys** button in the 
 | `Tab` | Jumps over the closing tag, bracket or quote right after the cursor. With the cursor in `you|</p>`, Tab puts it after `</p>`. Then `Enter` starts the next line. |
 | `Tab` | Expands a short form into full HTML (this is called Emmet). Type `p` and press Tab: you get `<p></p>` with the cursor inside. Type your text, press Tab again, and the cursor jumps out after `</p>`. |
 | `!` then `Enter` | Starts a whole empty page. A small list opens and shows what you will get. Enter accepts it. |
+| `Alt` `W` | Wraps the selected text in a tag. Type the tag, then Enter. |
+| `Shift` `Alt` `F` | Format: fixes the indentation of the whole file. The **Format** button does the same. |
 | `Ctrl` `Enter` | Starts a new line below, from anywhere in the line. You do not have to go to the end first. |
 | `Ctrl` `Shift` `Enter` | Starts a new line above. |
 | `End` and `Home` | Go to the end or the start of the line. |
@@ -64,6 +66,42 @@ Short forms only expand for real HTML tags. A normal word like `hello` stays a w
 After `!`, the cursor stands on the page title. Type your title, press Tab, and you are inside the `body`. The list for `!` only opens in a file that has no page yet, because a page inside a page is never what you want.
 
 Use them after you have typed a tag by hand a few times. First learn what `<p>` is, then let Tab write it for you.
+
+**Wrap with a tag.** Select some text and press `Alt` `W`. A small bar opens at the top of the editor. Type a short form and press Enter.
+
+| You select | You type | You get |
+| --- | --- | --- |
+| `Hello` | `strong` | `<strong>Hello</strong>` |
+| `Home` | `a` | `<a href="">Home</a>`, with the cursor in `href` |
+| two paragraphs | `div.card` | A `div` with the class `card` around them |
+| three lines | `ul>li*` | A list with one item for every line |
+
+With nothing selected, it wraps the text of the line the cursor is on. `Esc` closes the bar.
+
+**Rename both tags at once.** Put the cursor in the name of a tag and change it. The closing tag changes with it, and it works from the closing tag too. Both names are underlined while they are linked. One Undo takes both changes back.
+
+**Format.** The **Format** button in the editor bar puts every line at the right indent. It does not change your code: it only moves it. If you do not like the result, press Undo.
+
+**Short forms for CSS.** Between the `{` and `}` of a CSS rule, a short form becomes a full line. A small list shows what you will get. Press `Tab` or `Enter` to accept it.
+
+| Type this | You get |
+| --- | --- |
+| `m10` | `margin: 10px;` |
+| `p10-20` | `padding: 10px 20px;` |
+| `mt8` `mr8` `mb8` `ml8` | `margin-top: 8px;` and the other three sides. `pt8` and so on for padding |
+| `w100p` | `width: 100%;` |
+| `fz18` | `font-size: 18px;` |
+| `c#333` | `color: #333;` |
+| `bgc` | `background-color: #fff;`, with the cursor on the color |
+| `bd` | `border: 1px solid #000;`. Tab moves through the three values |
+| `bdrs8` | `border-radius: 8px;` |
+| `tac` | `text-align: center;` |
+| `fwb` | `font-weight: bold;` |
+| `df` | `display: flex;` |
+| `dn` | `display: none;` |
+| `curp` | `cursor: pointer;` |
+
+A letter group followed by a number works for most properties with a size. Words only work when they are on a fixed list, so a short form never becomes something you did not mean.
 
 ## Ask the tutor
 

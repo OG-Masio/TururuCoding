@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { canFormat } from "../lib/format";
 import type { Check, Files } from "../lib/lesson";
-import { CodeEditor } from "./CodeEditor";
+import { CodeEditor, type EditorApi } from "./CodeEditor";
 import { KeysHelp } from "./KeysHelp";
 import { Preview, type ConsoleEntry } from "./Preview";
 
@@ -25,6 +26,20 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
   const [log, setLog] = useState<ConsoleEntry[]>([]);
   const current = fileOrder.includes(active) ? active : fileOrder[0];
   const empty = Object.values(files).every((text) => text.trim() === "");
+  const editor = useRef<EditorApi | null>(null);
+  const [formatted, setFormatted] = useState("");
+
+  // The word next to the Format button goes away by itself.
+  useEffect(() => {
+    if (!formatted) return;
+    const timer = setTimeout(() => setFormatted(""), 2500);
+    return () => clearTimeout(timer);
+  }, [formatted]);
+
+  const format = async () => {
+    const result = await editor.current?.format();
+    setFormatted(result === "changed" ? "Tidied." : result === "same" ? "Already tidy." : "Could not format.");
+  };
 
   return (
     <div className="bench" data-view={view}>
@@ -39,12 +54,20 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
         </div>
         <div className="bench__actions">
           {actions}
+          <span className="bench__said" role="status">
+            {formatted}
+          </span>
+          {canFormat(current) ? (
+            <button type="button" className="btn btn--small btn--onblue" onClick={() => void format()} title="Fix the indentation of this file (Shift Alt F)">
+              Format
+            </button>
+          ) : null}
           <KeysHelp />
         </div>
       </div>
 
       <div className="bench__editor">
-        <CodeEditor key={current} filename={current} value={files[current] ?? ""} onChange={(value) => onChange({ ...files, [current]: value })} placeholder={placeholder} />
+        <CodeEditor key={current} filename={current} value={files[current] ?? ""} onChange={(value) => onChange({ ...files, [current]: value })} placeholder={placeholder} api={editor} />
       </div>
 
       <div className="bench__bar bench__bar--result">

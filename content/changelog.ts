@@ -19,6 +19,51 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.3",
+    date: "2026-11-21T13:57:00-05:00",
+    title: "Four more ways to type faster",
+    summary: "Wrap selected text in a tag, rename both tags at once, a Format button, and short forms for CSS.",
+    details: `
+### Wrap with a tag
+
+- Select some text and press \`Alt\` \`W\`. A small bar opens at the top of the editor.
+- Type a short form and press Enter. \`Hello\` with \`strong\` becomes \`<strong>Hello</strong>\`.
+- \`a\` gives \`<a href="">…</a>\` and puts the cursor in \`href\`.
+- Several lines with \`div.card\` get a box around them. Several lines with \`ul>li*\` become a list, one item for every line.
+- With nothing selected, it wraps the text of the line the cursor is on. \`Esc\` closes the bar.
+- In VS Code this is *Emmet: Wrap with Abbreviation*.
+
+### Rename both tags at once
+
+- Put the cursor in the name of a tag and change it. The closing tag changes with it.
+- It works from the closing tag too, and while you delete the whole name and type a new one.
+- Both names are underlined while they are linked.
+- An attribute you add (\`class="x"\`) stays in the opening tag only.
+- One Undo takes both changes back. In VS Code this is *linked editing*.
+
+### Format
+
+- The editor bar has a **Format** button. \`Shift\` \`Alt\` \`F\` does the same, like in VS Code.
+- It puts every line at the right indent, in HTML, CSS and JavaScript. CSS inside \`<style>\` gets one declaration per line.
+- It only moves your code. It never rewrites it: \`<br>\` stays \`<br>\`, and a long line is never broken.
+- It is the formatter VS Code uses for HTML. The lessons' own code comes out of it unchanged.
+- Undo brings back the text from before.
+
+### Short forms for CSS
+
+- Between the \`{\` and \`}\` of a rule, a short form becomes a full line: \`m10\` is \`margin: 10px;\`, \`p10-20\` is \`padding: 10px 20px;\`, \`fz18\` is \`font-size: 18px;\`, \`c#333\` is \`color: #333;\`.
+- Some words work too: \`df\` is \`display: flex;\`, \`tac\` is \`text-align: center;\`, \`fwb\` is \`font-weight: bold;\`, \`bgc\` is \`background-color: #fff;\` with the cursor on the color.
+- A small list shows what you will get. Tab or Enter accepts it.
+- It works in \`.css\` files, inside \`<style>\` and inside \`style=""\`.
+- Words only work when they are on a fixed, checked list. Emmet itself guesses when it does not know a word. Here a short form never becomes something you did not mean.
+- The Guide has the table under *Type faster*.
+
+### Fixed
+
+- Selected text on the line the cursor is on was almost invisible. The line highlight now steps aside while text is selected.
+`,
+  },
+  {
     version: "1.2",
     date: "2026-11-21T13:26:00-05:00",
     title: "About, the page starter and the tutor",

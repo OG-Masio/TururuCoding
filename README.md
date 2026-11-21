@@ -8,8 +8,9 @@ you twist it (a small change of your own). No answer is ever hidden.
 - **The map** shows the whole course: 8 tracks, 38 units, 314 lessons, a project for every unit and a
   capstone for every track.
 - **Lessons** have an editor with a live result next to it. Nothing to install.
-- **Fast typing** like in VS Code: Tab expands short forms (Emmet) and jumps out of a closing tag, and
-  `!` then Enter writes a whole empty page. The Keys button in the editor lists everything.
+- **Fast typing** like in VS Code: Tab expands short forms (Emmet) for HTML and CSS and jumps out of a
+  closing tag, `!` then Enter writes a whole empty page, Alt+W wraps a selection in a tag, both tags
+  of a pair are renamed at once, and Format fixes the indentation. The Keys button lists everything.
 - **A tutor** you can ask when a lesson is not clear. It is an open AI model that runs in your own
   Cloudflare account (Workers AI), inside the free daily amount.
 - **Themes:** TururuCoding's own look, or the colors of 45 well-known VS Code themes, for the code areas
@@ -111,6 +112,10 @@ src/
   lib/themes.ts          the colors of the VS Code themes (generated, do not edit by hand)
   lib/theme.ts           puts the chosen theme on the page
   lib/editorKeys.ts      the fast-typing keys
+  lib/cssShortForms.ts   short forms for CSS, with the checked word list
+  lib/linkedTags.ts      rename both tags of a pair at once
+  lib/wrapWith.ts        wrap the selection in a tag
+  lib/format.ts          the Format button
   lib/tutor.ts           asks the tutor and reads its answer while it is written
   lib/safeMarkdown.ts    shows an answer of the tutor without running anything in it
   lib/store.ts           progress and code in the browser
