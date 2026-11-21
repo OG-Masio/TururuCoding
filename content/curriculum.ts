@@ -80,6 +80,8 @@ export const tracks: TrackSpec[] = [
       },
       {
         id: "css",
+        folder: "css",
+        ready: true,
         title: "CSS: make it look good",
         summary: "Colors, fonts, spacing and themes for the pages you wrote in HTML.",
         outcomes: [

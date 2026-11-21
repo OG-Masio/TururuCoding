@@ -19,6 +19,44 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.4",
+    date: "2026-11-21T14:14:00-05:00",
+    title: "Unit 2: CSS",
+    summary: "Unit 2 is written: 11 lessons about CSS, the quick check, and the project \"Profile page with two themes\".",
+    details: `
+### Unit 2 is written
+
+- **CSS: make it look good** has 11 lessons, a quick check and a unit project. Same four steps as unit 1: read the answer, understand it, copy it, twist it.
+- The editor has two tabs in this unit: \`index.html\` and \`style.css\`. That is how real sites keep their CSS.
+- The checks under a twist read the real styles of your page. "The heading is dark blue" is only ticked when the browser really shows it dark blue.
+
+| Lesson | You learn |
+| --- | --- |
+| 1. Your first style rule | Connect \`style.css\`, and what selector, property and value are |
+| 2. Colors | Names, hex codes and \`rgb()\`. Text color and background color |
+| 3. Text | Font, size, weight, line height, alignment |
+| 4. The box model | Padding, border and margin |
+| 5. Classes | \`.card\`, two classes on one element, and when to use an id |
+| 6. Width and units | \`max-width\`, centering a column, \`px\`, \`%\` and \`rem\` |
+| 7. Backgrounds and corners | Layers of color, round corners, a round picture, a gradient |
+| 8. Hover and focus | \`:hover\` for the mouse, \`:focus-visible\` for the keyboard |
+| 9. Variables | One place for your colors |
+| 10. Shadows and motion | \`box-shadow\`, \`transition\`, \`@keyframes\` |
+| 11. Light and dark themes | A dark theme with a switch, without JavaScript |
+
+### The project
+
+- **Profile page with two themes.** Sam's page from unit 1 gets a header, cards, a clean table, a form that is nice to fill in, and a dark theme.
+- Eight steps. Each one gives you the CSS and explains every part of it.
+- *Make it yours* at the end: your colors, your corners, your font, your own text.
+
+### Fixed
+
+- **Bigger result** showed only a thin strip of the page. It now gives the result the whole space.
+- The small piece of CSS in lesson 10 of unit 1 is written one declaration per line, like everywhere else. Format leaves it alone now.
+`,
+  },
+  {
     version: "1.3",
     date: "2026-11-21T13:57:00-05:00",
     title: "Four more ways to type faster",

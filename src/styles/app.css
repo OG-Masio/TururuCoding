@@ -1150,6 +1150,27 @@ span.codebox__file {
   display: none;
 }
 
+/* Every part keeps its own row, also while another part is hidden. */
+.bench > .bench__bar {
+  grid-row: 1;
+}
+
+.bench > .bench__editor {
+  grid-row: 2;
+}
+
+.bench > .bench__bar--result {
+  grid-row: 3;
+}
+
+.bench > .bench__result {
+  grid-row: 4;
+}
+
+.bench > :last-child {
+  grid-row: 5;
+}
+
 .bench__bar {
   position: relative;
   /* Above the editor and the result bar, so the Keys list can open over them. */

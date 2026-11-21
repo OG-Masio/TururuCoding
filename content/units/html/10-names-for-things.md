@@ -14,8 +14,15 @@ So far every element had a meaning: a heading, a list, a form. Sometimes you onl
     <meta charset="UTF-8">
     <title>Sam Rivera</title>
     <style>
-      .card { border: 2px solid black; padding: 12px; margin-bottom: 12px; }
-      .tag { background: yellow; }
+      .card {
+        border: 2px solid black;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .tag {
+        background: yellow;
+      }
     </style>
   </head>
   <body>
@@ -42,8 +49,15 @@ So far every element had a meaning: a heading, a list, a form. Sometimes you onl
     <meta charset="UTF-8">
     <title>Sam Rivera</title>
     <style>
-      .card { border: 2px solid black; padding: 12px; margin-bottom: 12px; }
-      .tag { background: yellow; }
+      .card {
+        border: 2px solid black;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .tag {
+        background: yellow;
+      }
     </style>
   </head>
   <body>
@@ -92,8 +106,15 @@ The new card should get a border by itself, and the tagged words a yellow backgr
     <meta charset="UTF-8">
     <title>Sam Rivera</title>
     <style>
-      .card { border: 2px solid black; padding: 12px; margin-bottom: 12px; }
-      .tag { background: yellow; }
+      .card {
+        border: 2px solid black;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .tag {
+        background: yellow;
+      }
     </style>
   </head>
   <body>

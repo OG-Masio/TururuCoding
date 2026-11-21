@@ -9,7 +9,7 @@
 
 const shared = { indent_size: 2, indent_char: " ", preserve_newlines: true, max_preserve_newlines: 2, end_with_newline: false };
 
-const cssOptions = { ...shared, newline_between_rules: true, selector_separator_newline: false, space_around_combinator: true };
+const cssOptions = { ...shared, newline_between_rules: true, selector_separator_newline: true, space_around_combinator: true };
 
 const jsOptions = { ...shared, brace_style: "collapse,preserve-inline" as const, space_before_conditional: true, keep_array_indentation: false };
 

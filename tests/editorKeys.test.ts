@@ -120,7 +120,7 @@ describe("format", () => {
   });
 
   it("formats CSS: one declaration per line", async () => {
-    expect(await formatCode(".card{border:2px solid black;padding:12px}\nh1, h2{color:red}", "style.css")).toBe(".card {\n  border: 2px solid black;\n  padding: 12px\n}\n\nh1, h2 {\n  color: red\n}");
+    expect(await formatCode(".card{border:2px solid black;padding:12px}\nh1, h2{color:red}", "style.css")).toBe(".card {\n  border: 2px solid black;\n  padding: 12px\n}\n\nh1,\nh2 {\n  color: red\n}");
   });
 
   it("formats JavaScript and leaves other files alone", async () => {

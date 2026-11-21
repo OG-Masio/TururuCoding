@@ -19,8 +19,8 @@ you twist it (a small change of your own). No answer is ever hidden.
   Cloudflare account.
 - **About** (a tab of the Guide) lists every version with its date and what changed.
 
-Unit 1 (HTML) is written. The other units are planned in `content/curriculum.ts` and get written one
-unit at a time.
+Units 1 (HTML) and 2 (CSS) are written. The other units are planned in `content/curriculum.ts` and get
+written one unit at a time.
 
 ## Run it on your computer
 
