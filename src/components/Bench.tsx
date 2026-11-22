@@ -4,6 +4,7 @@ import type { Check, Files } from "../lib/lesson";
 import { CodeEditor, type EditorApi } from "./CodeEditor";
 import { KeysHelp } from "./KeysHelp";
 import { Preview, type ConsoleEntry } from "./Preview";
+import { Screen, ScreenSwitch } from "./Screen";
 
 type View = "split" | "code" | "result";
 
@@ -28,6 +29,9 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
   const empty = Object.values(files).every((text) => text.trim() === "");
   const editor = useRef<EditorApi | null>(null);
   const [formatted, setFormatted] = useState("");
+  // The width the result is shown at: a phone, a tablet, a desktop, or (null) as wide as its place on the page.
+  const [screen, setScreen] = useState<number | null>(null);
+  const [scale, setScale] = useState(1);
 
   // The word next to the Format button goes away by itself.
   useEffect(() => {
@@ -72,6 +76,10 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
 
       <div className="bench__bar bench__bar--result">
         <span className="bench__label">Result</span>
+        <ScreenSwitch value={screen} onChange={setScreen} onBlue />
+        <span className="bench__said bench__said--screen" role="status">
+          {screen ? `${screen} px wide${scale < 1 ? `, shown at ${Math.round(scale * 100)}%` : ""}` : ""}
+        </span>
         <div className="bench__actions">
           <button type="button" className="btn btn--small btn--onblue" aria-pressed={view === "code"} onClick={() => setView(view === "code" ? "split" : "code")}>
             Bigger code
@@ -83,7 +91,9 @@ export function Bench({ label, files, fileOrder, onChange, checks, onChecks, act
       </div>
 
       <div className="bench__result">
-        <Preview files={files} title="Result of your code" checks={checks} onChecks={onChecks} onConsole={setLog} />
+        <Screen width={screen} onScale={setScale}>
+          <Preview files={files} title="Result of your code" checks={checks} onChecks={onChecks} onConsole={setLog} />
+        </Screen>
         {empty ? <div className="bench__empty">Your page shows up here as soon as you type.</div> : null}
       </div>
 

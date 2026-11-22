@@ -1409,6 +1409,11 @@ span.codebox__file {
 }
 
 .frame__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
   padding: 4px 12px;
   font-size: 14px;
   font-weight: 700;
@@ -2553,4 +2558,58 @@ kbd {
   line-height: 1.4;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* ──────────────────────────────────────── the width of the result (version 1.6) */
+
+/* Phone, Tablet, Desktop. */
+.screens {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.frame__bar .screens .btn {
+  padding: 1px 8px;
+  font-size: 13px;
+}
+
+.frame__bar .screens .btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bench__bar--result {
+  flex-wrap: wrap;
+}
+
+.bench__said--screen {
+  align-self: center;
+  white-space: nowrap;
+}
+
+/* The place a result is shown in. With a fixed width, the page sits in the middle on a quiet background. */
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.screen[data-fixed] {
+  background: repeating-linear-gradient(135deg, #e3e7ee 0 10px, #edf0f5 10px 20px);
+}
+
+/* The page is placed by hand, so that a wide page (Desktop) can never push its place wider. */
+.screen__page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: top left;
+}
+
+.screen[data-fixed] .screen__page {
+  box-shadow: 0 0 0 2px #16243a;
 }

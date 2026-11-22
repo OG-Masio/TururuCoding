@@ -19,6 +19,49 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.6",
+    date: "2026-11-22T04:51:00-05:00",
+    title: "Unit 3: Layout",
+    summary: "Unit 3 is written: 9 lessons about flexbox, grid, position and media queries, the quick check, and the project \"Responsive landing page\". The result has three new buttons: Phone, Tablet and Desktop.",
+    details: `
+### Unit 3 is written
+
+- **Layout: put things where you want** has 9 lessons, a quick check and a unit project. Same four steps as before: read the answer, understand it, copy it, twist it.
+- The editor has the HTML ready in every lesson. You type the layout in \`style.css\`.
+
+| Lesson | You learn |
+| --- | --- |
+| 1. Block and inline | What the browser does by itself. \`display\`: \`block\`, \`inline\`, \`inline-block\`, \`none\` |
+| 2. Flexbox: a row of things | \`display: flex\`, \`gap\`, and shares of the space with \`flex: 1\` |
+| 3. Flexbox: centering and spacing | \`justify-content\`, \`align-items\`, \`flex-direction\`. Something exactly in the middle |
+| 4. Flexbox: wrapping and a nav bar | A list as a menu, \`margin-left: auto\`, \`flex-wrap\` |
+| 5. Grid: rows and columns | \`grid-template-columns\`, \`fr\`, \`repeat()\`, a box over two columns |
+| 6. Grid: a photo gallery | \`auto-fit\` and \`minmax()\`: columns that follow the screen. \`object-fit\`, \`aspect-ratio\` |
+| 7. Position | A bar that stays (\`sticky\`), a badge on a corner (\`absolute\` in \`relative\`), \`fixed\`, \`z-index\` |
+| 8. Responsive: media queries | \`@media\`, \`max-width\`, \`min-width\`, breakpoints, the viewport line |
+| 9. Mobile first | Write the phone page first, then add room for bigger screens |
+
+### Phone, Tablet, Desktop
+
+- The bar above the result has three new buttons. **Phone** shows the result 375 pixels wide, **Tablet** 768, **Desktop** 1200.
+- A page that is wider than its place is shown smaller, so you see its whole width. The bar says how much, for example "1200 px wide, shown at 72%". The page itself still acts as if it has the full width, so media queries work.
+- Press the same button again to go back to the normal width.
+- The results next to the lesson text get the same buttons when their code has a media query or columns that follow the screen.
+- The buttons work in every unit, also on your old pages.
+
+### The project
+
+- **Responsive landing page.** A page for Dock Planner, a made-up app for warehouses: a nav bar that stays at the top, a hero with a button and a picture, three feature boxes, a footer.
+- Eight steps. You build the phone page first. Then one block of CSS for tablets and one for desktops.
+- *Make it yours* at the end: your own product, colors, a fourth box, the picture on the other side.
+- *On your computer* shows the same phone view in your own browser: \`F12\`, then \`Ctrl\` \`Shift\` \`M\`.
+
+### How the checks work in this unit
+
+- Checks about a media query read your CSS rules, not the size of the result. So they give the same answer whatever button is pressed.
+`,
+  },
+  {
     version: "1.5.3",
     date: "2026-11-22T04:29:00-05:00",
     title: "Pair boxes only after a click",

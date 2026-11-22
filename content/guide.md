@@ -23,6 +23,7 @@ Every unit starts with a quick check: one task that uses everything the unit tea
 
 - The colored area is your code. The white area under it is the result. It updates while you type.
 - **Bigger code** and **Bigger result** give one of them the whole space.
+- **Phone**, **Tablet** and **Desktop** show the result at the width of such a screen: 375, 768 or 1200 pixels. A page that is wider than its place is shown smaller, so you always see the whole width. Press the same button again to go back. You need these from unit 3 on, where one page must work on every screen.
 - When your code prints something or has an error, a **Console** opens under the result. A red line is an error: read it, it usually names the problem.
 - If you replace your code by mistake (with *Paste the answer*, for example), press **Undo** in the message at the bottom.
 

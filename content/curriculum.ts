@@ -111,6 +111,8 @@ export const tracks: TrackSpec[] = [
       },
       {
         id: "layout",
+        folder: "layout",
+        ready: true,
         title: "Layout: put things where you want",
         summary: "Flexbox, grid and responsive design, so one page works on a phone and on a big screen.",
         outcomes: [
