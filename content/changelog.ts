@@ -19,6 +19,35 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.5.2",
+    date: "2026-11-21T20:09:00-05:00",
+    title: "Fix: the tutor had no answer for any question",
+    summary: "On the published site the tutor said \"did not write an answer\" every time. It now asks the model to answer without thinking first, reads the answer in more places, and shows what the model sent when an answer is still missing.",
+    details: `
+### What went wrong
+
+- The question reached the server, and the AI model sent something back. The count of questions went down, which proves both.
+- But the site found **no answer text** in what came back. So it showed "The tutor did not write an answer this time".
+- The model of the tutor can **think** before it answers. A server can send that thinking in a separate place from the answer. The site only read the place for the answer. The most likely story: the model used its room for thinking, or its answer came in the place for thinking.
+- Before this version the tutor was only tested with a stand-in model, not with the real one. The stand-in never thinks.
+
+### What changed
+
+- **No thinking first.** The server now asks the model to answer at once. A question about a lesson does not need long thinking. If the model refuses that switch, the server asks again without it.
+- **A little more room.** An answer may now use 1,500 tokens (before: 1,000). If a model thinks anyway, it can still reach the answer. The limit stays at 80 questions a day: the sum still ends under the free amount.
+- **The answer is read in more places.** In the place for thinking (when the model was done and wrote nothing else), in parts, all at once, and as plain lines. The marks Gemma puts around its thinking are taken out.
+- **A clearer message.** "The AI model thought about the question but did not get to the answer" is now its own message.
+- **Details for fixing this.** When an answer is missing, the red box has a small link with this name. It shows which model answered, why it stopped, and the first and last pieces it sent. **Copy the details** copies them. With these, the cause is no longer a guess.
+- **Ask again** now comes first in the red box.
+
+### Not tested with the real model
+
+- This fix follows the most likely causes. It was tested with a stand-in model that copies them, not with the real model.
+- If the tutor still has no answer after you publish, open **Details for fixing this** and copy what it shows.
+- Unit 20 uses the same model. Its lessons get the same correction once the details show what the real model sends.
+`,
+  },
+  {
     version: "1.5.1",
     date: "2026-11-21T19:15:00-05:00",
     title: "Fix: Tab after Enter inside a new tag",

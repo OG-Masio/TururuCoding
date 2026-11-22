@@ -147,7 +147,28 @@ describe("the tutor's server: asking the model", () => {
     expect(model).toBe(MODEL);
     expect(await collect(stream)).toBe("Hello");
     expect(calls).toHaveLength(1);
-    expect(calls[0][1]).toMatchObject({ stream: true, max_tokens: MAX_ANSWER_TOKENS });
+    expect(calls[0][1]).toMatchObject({ stream: true, max_tokens: MAX_ANSWER_TOKENS, chat_template_kwargs: { enable_thinking: false } });
+  });
+
+  it("asks again with nothing extra when the model refuses the no-thinking switch", async () => {
+    const calls: Record<string, unknown>[] = [];
+    const ai: AiBinding = {
+      async run(_model, inputs) {
+        calls.push(inputs);
+        if ("chat_template_kwargs" in inputs) throw new Error("5006: Invalid input: unknown field chat_template_kwargs");
+        return streamOf('data: {"response":"Plain answer"}\n\n');
+      },
+    };
+    const { stream, model } = await askModel(ai, messages);
+    expect(model).toBe(MODEL);
+    expect(calls).toHaveLength(2);
+    expect("chat_template_kwargs" in calls[1]).toBe(false);
+    expect(await collect(stream)).toBe("Plain answer");
+  });
+
+  it("finds an answer that was put in the place for thinking", () => {
+    expect(answerFrom({ choices: [{ message: { content: "", reasoning_content: "An id is a name." } }] })).toBe("An id is a name.");
+    expect(answerFrom({ choices: [{ message: { content: "Real answer.", reasoning_content: "thinking" } }] })).toBe("Real answer.");
   });
 
   it("turns an answer that did not come as a stream into one", async () => {
@@ -167,7 +188,8 @@ describe("the tutor's server: asking the model", () => {
       },
     };
     const { stream, model } = await askModel(ai, messages);
-    expect(used).toEqual([MODEL, BACKUP_MODEL]);
+    // The first model is tried twice: without thinking, then with nothing extra.
+    expect(used).toEqual([MODEL, MODEL, BACKUP_MODEL]);
     expect(model).toBe(BACKUP_MODEL);
     expect(await collect(stream)).toBe("From the backup");
   });
@@ -204,10 +226,24 @@ describe("the tutor in the browser: reading the answer", () => {
     expect(readEvent('{"usage":{"total_tokens":12}}').text).toBe("");
   });
 
-  it("notices when the model is still thinking", () => {
+  it("keeps the model's thinking apart from its answer", () => {
     const event = readEvent('{"choices":[{"delta":{"reasoning_content":"Let me see"}}]}');
-    expect(event.thinking).toBe(true);
+    expect(event.thought).toBe("Let me see");
     expect(event.text).toBe("");
+    expect(readEvent('{"choices":[{"delta":{"reasoning":"Hmm"}}]}').thought).toBe("Hmm");
+    expect(readEvent('{"type":"response.reasoning_summary_text.delta","delta":"Hmm"}').thought).toBe("Hmm");
+    expect(readEvent('{"choices":[{"delta":{"content":"An id"}}]}').thought).toBe("");
+  });
+
+  it("reads an answer that is cut into parts, or that came whole", () => {
+    expect(readEvent('{"choices":[{"delta":{"content":[{"type":"text","text":"An "},{"type":"text","text":"id"}]}}]}').text).toBe("An id");
+    expect(readEvent('{"choices":[{"message":{"content":"All at once."}}]}').text).toBe("All at once.");
+    expect(readEvent('{"choices":[{"message":{"content":"","reasoning_content":"Put here by mistake."}}]}').thought).toBe("Put here by mistake.");
+  });
+
+  it("reads lines that are data by themselves, without the word data in front", async () => {
+    const answer = await collect(streamOf('{"response":"One "}\n{"choices":[{"delta":{"content":"two"}}]}\n', "not data\n", '{"response":" three"}'));
+    expect(answer).toBe("One two three");
   });
 
   it("reports an error inside the stream", () => {
@@ -224,6 +260,22 @@ describe("the tutor in the browser: reading the answer", () => {
     expect(withoutThinking("<think>hmm, an id</think>\n\nAn id is a name.")).toBe("An id is a name.");
     expect(withoutThinking("<think>still going")).toBe("");
     expect(withoutThinking("An id is a name.")).toBe("An id is a name.");
+  });
+
+  it("reads why the model stopped", () => {
+    expect(readEvent('{"choices":[{"delta":{},"finish_reason":"length"}]}').finish).toBe("length");
+    expect(readEvent('{"choices":[{"delta":{"content":"a"},"finish_reason":null}]}').finish).toBe(null);
+  });
+
+  it("leaves tags the answer is about alone", () => {
+    expect(withoutThinking("An RSS file has a <channel> element.")).toBe("An RSS file has a <channel> element.");
+    expect(withoutThinking("Done.<turn|>")).toBe("Done.");
+  });
+
+  it("takes out the marks Gemma puts around its thinking", () => {
+    expect(withoutThinking("<|channel>thought\n<channel|>An id is a name.")).toBe("An id is a name.");
+    expect(withoutThinking("<|channel>thought\nThe learner asks about ids.<channel|>\nAn id is a name.")).toBe("An id is a name.");
+    expect(withoutThinking("<|channel>thought\nstill thinking")).toBe("");
   });
 
   it("describes the code and the lesson for the model", () => {

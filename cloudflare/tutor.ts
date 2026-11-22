@@ -25,17 +25,21 @@ export const BACKUP_MODEL = "@cf/zai-org/glm-4.7-flash";
  * Questions per day (the day changes at midnight UTC, when Cloudflare's own count starts again).
  *
  * Why 80: Cloudflare gives every account 10,000 "neurons" of AI use per day for free.
- * One question costs at most about 100 neurons with this model:
+ * One question costs at most about 114 neurons with this model:
  *   input   at most 16,000 characters (see LIMITS), at most about 8,000 tokens  ->  73 neurons
- *   output  at most 1,000 tokens (MAX_ANSWER_TOKENS)                            ->  27 neurons
- * So 80 of the longest possible questions use about 8,000 neurons, under the free 10,000.
+ *   output  at most 1,500 tokens (MAX_ANSWER_TOKENS)                            ->  41 neurons
+ * So 80 of the longest possible questions use about 9,100 neurons, under the free 10,000.
  * A normal question is much smaller. If you change the model, do this sum again
  * with the new model's prices before you raise the limit.
  */
 export const DAILY_LIMIT = 80;
 
-/** The longest answer the model may write, thinking included. */
-export const MAX_ANSWER_TOKENS = 1000;
+/**
+ * The longest answer the model may write, thinking included.
+ * The tutor asks the model not to think first (see NO_THINKING). If a model thinks anyway,
+ * this leaves it room to still reach the answer. It is part of the sum above.
+ */
+export const MAX_ANSWER_TOKENS = 1500;
 
 /** The most characters of each part that go to the model. Together they stay under 16,000. */
 export const LIMITS = {
@@ -179,28 +183,39 @@ const asStream = (answer: string) =>
 export function answerFrom(output: unknown): string {
   if (typeof output === "string") return output;
   if (!output || typeof output !== "object") return "";
-  const o = output as { response?: unknown; choices?: { message?: { content?: unknown } }[] };
+  const o = output as { response?: unknown; choices?: { message?: { content?: unknown; reasoning_content?: unknown } }[] };
   if (typeof o.response === "string") return o.response;
-  const content = o.choices?.[0]?.message?.content;
-  return typeof content === "string" ? content : "";
+  const message = o.choices?.[0]?.message;
+  if (typeof message?.content === "string" && message.content) return message.content;
+  // Some servers put the whole answer in the place meant for the model's thinking.
+  return typeof message?.reasoning_content === "string" ? message.reasoning_content : "";
 }
 
 /**
+ * Some models can "think" before they answer. The thinking uses up the tokens of the answer,
+ * and for short questions about a lesson it adds nothing. This asks the model to answer at once.
+ * (It is the switch the makers of Gemma name. A model that does not know it ignores it.)
+ */
+const NO_THINKING = { chat_template_kwargs: { enable_thinking: false } };
+
+/**
  * Asks the model and returns its answer as a stream of server-sent events.
- * Tries the backup model when the first one does not start.
+ * Tries, in this order: the model without thinking, the same model with nothing extra
+ * (in case it refuses the switch), and then the backup model.
  */
 export async function askModel(ai: AiBinding, messages: ChatMessage[], models: string[] = [MODEL, BACKUP_MODEL]): Promise<{ stream: ReadableStream<Uint8Array>; model: string }> {
+  const tries = models.flatMap((model, i) => (i === 0 ? [{ model, extra: NO_THINKING }, { model, extra: {} }] : [{ model, extra: {} }]));
   let firstError: unknown = null;
-  for (const model of models) {
+  for (const { model, extra } of tries) {
     try {
-      const output = await ai.run(model, { messages, stream: true, max_tokens: MAX_ANSWER_TOKENS, temperature: 0.3 });
+      const output = await ai.run(model, { messages, stream: true, max_tokens: MAX_ANSWER_TOKENS, temperature: 0.3, ...extra });
       if (output instanceof ReadableStream) return { stream: output as ReadableStream<Uint8Array>, model };
       const answer = answerFrom(output);
       if (answer) return { stream: asStream(answer), model };
       throw new Error("The model sent an empty answer.");
     } catch (error) {
       firstError ??= error;
-      // The free amount for today is used up: the other model would fail the same way.
+      // The free amount for today is used up: every other try would fail the same way.
       if (isOutOfAllowance(error)) break;
     }
   }

@@ -60,9 +60,21 @@ export const asContext = (parts: (string | null | undefined | false)[]) =>
     .join("\n\n")
     .slice(0, MAX_CONTEXT);
 
-/** What one event of the stream holds. Different models name the text differently. */
-export function readEvent(data: string): { text: string; thinking: boolean; done: boolean; error: string | null } {
-  const nothing = { text: "", thinking: false, done: false, error: null };
+/** Text as a model can send it: plain, or cut into parts. */
+const asText = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map((part) => (typeof part === "string" ? part : typeof (part as { text?: unknown })?.text === "string" ? (part as { text: string }).text : "")).join("");
+  return "";
+};
+
+/**
+ * What one event of the stream holds. Different models name things differently, so this
+ * looks in every place an answer is known to arrive.
+ *   text     a piece of the answer
+ *   thought  a piece of the model's thinking ("reasoning"), which some models send before the answer
+ */
+export function readEvent(data: string): { text: string; thought: string; finish: string | null; done: boolean; error: string | null } {
+  const nothing = { text: "", thought: "", finish: null, done: false, error: null };
   const trimmed = data.trim();
   if (!trimmed) return nothing;
   if (trimmed === "[DONE]") return { ...nothing, done: true };
@@ -78,28 +90,40 @@ export function readEvent(data: string): { text: string; thinking: boolean; done
     error?: unknown;
     type?: unknown;
     delta?: unknown;
-    choices?: { delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; text?: unknown }[];
+    choices?: {
+      delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown };
+      message?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown };
+      text?: unknown;
+      finish_reason?: unknown;
+    }[];
   };
   if (e.error) {
     const message = typeof e.error === "string" ? e.error : ((e.error as { message?: unknown }).message ?? "The model stopped with an error.");
     return { ...nothing, error: String(message) };
   }
   const choice = e.choices?.[0];
+  const kind = typeof e.type === "string" ? e.type : "";
   const text =
-    typeof e.response === "string"
-      ? e.response
-      : typeof choice?.delta?.content === "string"
-        ? choice.delta.content
-        : typeof choice?.text === "string"
-          ? choice.text
-          : typeof e.delta === "string" && typeof e.type === "string" && e.type.endsWith("output_text.delta")
-            ? e.delta
-            : "";
-  const thinking = !text && (typeof choice?.delta?.reasoning_content === "string" || typeof choice?.delta?.reasoning === "string");
-  return { text, thinking, done: false, error: null };
+    asText(e.response) ||
+    asText(choice?.delta?.content) ||
+    asText(choice?.message?.content) ||
+    asText(choice?.text) ||
+    (kind.endsWith("output_text.delta") ? asText(e.delta) : "");
+  const thought =
+    asText(choice?.delta?.reasoning_content) ||
+    asText(choice?.delta?.reasoning) ||
+    asText(choice?.message?.reasoning_content) ||
+    asText(choice?.message?.reasoning) ||
+    (kind.includes("reasoning") ? asText(e.delta) : "");
+  // Why the model stopped: "stop" (it was done) or "length" (it ran out of room).
+  const finish = typeof choice?.finish_reason === "string" ? choice.finish_reason : null;
+  return { text, thought, finish, done: false, error: null };
 }
 
-/** Reads a stream of server-sent events and hands over each "data:" line. */
+/**
+ * Reads the stream line by line and hands over every piece of data.
+ * A piece is a line that starts with "data:" (server-sent events), or a line that is JSON by itself.
+ */
 export async function readEvents(body: ReadableStream<Uint8Array>, onData: (data: string) => void): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -107,7 +131,10 @@ export async function readEvents(body: ReadableStream<Uint8Array>, onData: (data
   const flush = (final: boolean) => {
     const lines = buffer.split(/\r?\n/);
     buffer = final ? "" : (lines.pop() ?? "");
-    for (const line of lines) if (line.startsWith("data:")) onData(line.slice(5));
+    for (const line of lines) {
+      if (line.startsWith("data:")) onData(line.slice(5));
+      else if (line.trimStart().startsWith("{")) onData(line);
+    }
   };
   for (;;) {
     const { value, done } = await reader.read();
@@ -119,8 +146,16 @@ export async function readEvents(body: ReadableStream<Uint8Array>, onData: (data
   flush(true);
 }
 
-/** Some models put their thinking in the answer, between <think> tags. The learner only needs the answer. */
-export const withoutThinking = (answer: string) => answer.replace(/<think>[\s\S]*?(<\/think>|$)/g, "").replace(/^\s+/, "");
+/**
+ * Some models put their thinking in the answer, inside marks: <think>…</think>, or
+ * <|channel>…<channel|> (Gemma). The learner only needs the answer.
+ */
+export const withoutThinking = (answer: string) =>
+  answer
+    .replace(/<think>[\s\S]*?(<\/think>|$)/g, "")
+    .replace(/<\|channel>[\s\S]*?(<channel\|>|$)/g, "")
+    .replace(/<\|(channel|turn)>|<(channel|turn)\|>/g, "")
+    .replace(/^\s+/, "");
 
 export interface AskInput {
   title: string;
@@ -134,6 +169,8 @@ export class TutorError extends Error {
   constructor(
     message: string,
     public usage: TutorUsage | null = null,
+    /** What the server really sent, for finding out why there was no answer. */
+    public detail: string | null = null,
   ) {
     super(message);
   }
@@ -176,18 +213,48 @@ export async function askTutor(
   if (!res.body) throw new TutorError("The tutor sent an empty answer. Try again.", usage);
 
   let raw = "";
+  let thought = "";
   let failure: string | null = null;
+  let finish: string | null = null;
+  // A copy of what arrived, so that an empty answer can be explained: the first pieces and the last ones.
+  let pieces = 0;
+  const first: string[] = [];
+  let last: string[] = [];
   await readEvents(res.body, (data) => {
+    pieces += 1;
+    const piece = data.trim().slice(0, 300);
+    if (first.length < 5) first.push(piece);
+    else last = [...last.slice(-2), piece];
     const event = readEvent(data);
     if (event.error) failure = event.error;
-    if (event.thinking) handlers.onThinking?.();
+    if (event.finish) finish = event.finish;
+    if (event.thought) {
+      thought += event.thought;
+      if (!raw) handlers.onThinking?.();
+    }
     if (event.text) {
       raw += event.text;
       handlers.onAnswer(withoutThinking(raw));
     }
   });
-  const answer = withoutThinking(raw).trim();
-  if (failure && !answer) throw new TutorError(`The AI model stopped with an error. Try again. (${failure})`, usage);
-  if (!answer) throw new TutorError("The tutor did not write an answer this time. Ask again, or ask in other words.", usage);
+  let answer = withoutThinking(raw).trim();
+  // Some servers send the whole answer of a model in the place meant for its thinking. That is still
+  // the answer, unless the model ran out of room: then it is thinking that never reached an answer.
+  if (!answer && thought.trim() && finish !== "length") {
+    answer = withoutThinking(thought).trim();
+    if (answer) handlers.onAnswer(answer);
+  }
+  if (!answer) {
+    const detail = [
+      `Model: ${res.headers.get("x-tutor-model") ?? "not named"}`,
+      `Pieces: ${pieces}. Reason for stopping: ${finish ?? "not given"}.`,
+      "First pieces:",
+      ...(first.length ? first : ["(nothing)"]),
+      ...(last.length ? [pieces > first.length + last.length ? "…\nLast pieces:" : "Last pieces:", ...last] : []),
+    ].join("\n");
+    if (failure) throw new TutorError(`The AI model stopped with an error. Try again. (${failure})`, usage, detail);
+    if (thought.trim() || raw.trim()) throw new TutorError("The AI model thought about the question but did not get to the answer. Ask again, or ask a shorter question.", usage, detail);
+    throw new TutorError("The tutor did not write an answer this time. Ask again, or ask in other words.", usage, detail);
+  }
   return { answer, usage };
 }

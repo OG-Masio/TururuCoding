@@ -115,6 +115,7 @@ Sometimes one explanation is not enough. Lessons, quick checks and unit projects
 - The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The site allows 80 questions a day. The count starts again at midnight UTC.
 - The panel opens on the right and lies over a part of the page. **Move left** puts it, and the robot, on the other side. The site remembers the side on this device.
 - An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
+- Sometimes the tutor has no answer. The red box then has **Ask again**, and a link named **Details for fixing this**. It shows what the AI model sent. Copy it when you want to find out why.
 
 The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. [Unit 20](#/unit/ai-helper), *AI in your site: build a chat helper*, teaches you to build one yourself.
 

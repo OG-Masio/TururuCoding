@@ -2512,3 +2512,33 @@ kbd {
 .lesson--computer .field {
   margin-top: 20px;
 }
+
+/* What the model really sent, when there was no answer. */
+.tutor__detail {
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+
+.tutor__detail summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--link);
+}
+
+.tutor__detail p {
+  margin: 6px 0;
+}
+
+.tutor__detail pre {
+  max-height: 180px;
+  margin: 0 0 8px;
+  padding: 8px;
+  overflow: auto;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

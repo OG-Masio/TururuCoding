@@ -136,7 +136,7 @@ const CORS: Record<string, string> = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "authorization, content-type",
   "access-control-allow-methods": "GET, POST, OPTIONS",
-  "access-control-expose-headers": "x-tutor-used, x-tutor-limit",
+  "access-control-expose-headers": "x-tutor-used, x-tutor-limit, x-tutor-model",
   "access-control-max-age": "86400",
 };
 
@@ -206,9 +206,16 @@ async function handleTutor(request: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const { stream } = await askModel(env.AI, buildMessages(asked.value));
+    const { stream, model } = await askModel(env.AI, buildMessages(asked.value));
     return new Response(stream, {
-      headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-tutor-used": String(turn.used), "x-tutor-limit": String(DAILY_LIMIT) },
+      headers: {
+        "content-type": "text/event-stream; charset=utf-8",
+        "cache-control": "no-store",
+        "x-tutor-used": String(turn.used),
+        "x-tutor-limit": String(DAILY_LIMIT),
+        // Which model answered. The site shows it when an answer comes back empty.
+        "x-tutor-model": model,
+      },
     });
   } catch (error) {
     console.error("tutor", error);

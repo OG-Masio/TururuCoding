@@ -68,6 +68,8 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
   const [busy, setBusy] = useState<null | "waiting" | "thinking" | "writing">(null);
   const [writing, setWriting] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+  const [problemDetail, setProblemDetail] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [state, setState] = useState<TutorState | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
   const [side, setSide] = useState<Side>(savedSide);
@@ -155,6 +157,8 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
     setDraft("");
     setQuote("");
     setProblem(null);
+    setProblemDetail(null);
+    setCopied(false);
     setWriting("");
     setBusy("waiting");
     const controller = new AbortController();
@@ -187,6 +191,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
     } catch (error) {
       if (controller.signal.aborted) return;
       setProblem(error instanceof TutorError ? error.message : "Something went wrong while asking the tutor. Try again.");
+      setProblemDetail(error instanceof TutorError ? error.detail : null);
       if (error instanceof TutorError && error.usage) setState({ kind: "ready", ...error.usage });
     } finally {
       if (request.current === controller) request.current = null;
@@ -239,6 +244,8 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
     request.current?.abort();
     setTurns([]);
     setProblem(null);
+    setProblemDetail(null);
+    setCopied(false);
     setQuote("");
   };
 
@@ -369,9 +376,28 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
               <div className="tutor__problem" role="alert">
                 <p>{problem}</p>
                 {waitingTurn && left !== 0 ? (
-                  <button type="button" className="btn btn--small" onClick={retry}>
+                  <button type="button" className="btn btn--small tutor__again" onClick={retry}>
                     Ask again
                   </button>
+                ) : null}
+                {problemDetail ? (
+                  <details className="tutor__detail">
+                    <summary>Details for fixing this</summary>
+                    <p>This is what the AI model sent. Copy it and send it to the person who looks after this site.</p>
+                    <pre>{problemDetail}</pre>
+                    <button
+                      type="button"
+                      className="btn btn--small"
+                      onClick={() =>
+                        void navigator.clipboard
+                          .writeText(problemDetail)
+                          .then(() => setCopied(true))
+                          .catch(() => {})
+                      }
+                    >
+                      {copied ? "Copied" : "Copy the details"}
+                    </button>
+                  </details>
                 ) : null}
               </div>
             ) : null}
