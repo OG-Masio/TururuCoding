@@ -11,11 +11,11 @@
  * Ctrl+Enter (a new line below, from anywhere in the line) and the keys for
  * moving and copying lines already come with the editor.
  */
-import { acceptCompletion, autocompletion, closeCompletion, completionStatus, snippet, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
+import { acceptCompletion, autocompletion, clearSnippet, closeCompletion, completionStatus, snippet, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { indentWithTab } from "@codemirror/commands";
 import { syntaxTree } from "@codemirror/language";
-import { EditorSelection, EditorState, Prec, type Extension } from "@codemirror/state";
-import { keymap, type Command } from "@codemirror/view";
+import { EditorSelection, EditorState, Prec, Transaction, type Extension } from "@codemirror/state";
+import { EditorView, keymap, type Command } from "@codemirror/view";
 import expand, { extract } from "emmet";
 import { cssToSnippet, cssToText, inDeclarations, isCssShortForm } from "./cssShortForms";
 
@@ -262,20 +262,44 @@ export const insertBlankLineAbove: Command = (view) => {
   return true;
 };
 
+/**
+ * A short form leaves stops behind: the places Tab jumps to next ("<footer>|</footer>", then after it).
+ * They are for filling in one line. When you press Enter inside a new tag you start writing its
+ * content, so the stops end there. Without this, the next Tab would not expand "p" or indent:
+ * it would jump to the old stop after the closing tag.
+ */
+const stopsEndOnNewLine = EditorView.updateListener.of((update) => {
+  if (!update.docChanged) return;
+  for (const tr of update.transactions) {
+    // "input" alone is a new line typed by hand (Enter, Ctrl+Enter). A short form that is being inserted is "input.complete".
+    if (tr.annotation(Transaction.userEvent) !== "input") continue;
+    let newLine = false;
+    tr.changes.iterChanges((_fromA, _toA, _fromB, _toB, inserted) => {
+      if (inserted.lines > 1) newLine = true;
+    });
+    if (newLine) {
+      clearSnippet(update.view);
+      return;
+    }
+  }
+});
+
 /** Everything in this file as one editor extension, for one file. Order matters: the first command that says "done" wins. */
 export const fastKeys = (filename: string): Extension => {
   // One list for the whole life of the editor: the editor recognises a source of suggestions by being the very same function.
   const suggestions = [{ autocomplete: abbreviationCompletions(filename) }];
   return [
+    // First of all, also before "jump to the next stop": a short form in front of the cursor is expanded.
+    Prec.highest(
+      keymap.of([
+        { key: "Tab", run: (view) => completionStatus(view.state) === "active" && acceptCompletion(view) },
+        { key: "Tab", run: expandAbbreviation(filename) },
+      ]),
+    ),
     // Before the editor's own Enter (a new line).
     Prec.high(keymap.of([{ key: "Enter", run: acceptAbbreviation(filename) }])),
-    keymap.of([
-      { key: "Tab", run: (view) => completionStatus(view.state) === "active" && acceptCompletion(view) },
-      { key: "Tab", run: expandAbbreviation(filename) },
-      { key: "Tab", run: tabOut },
-      { key: "Shift-Mod-Enter", run: insertBlankLineAbove },
-      indentWithTab,
-    ]),
+    keymap.of([{ key: "Tab", run: tabOut }, { key: "Shift-Mod-Enter", run: insertBlankLineAbove }, indentWithTab]),
+    stopsEndOnNewLine,
     EditorState.languageData.of(() => suggestions),
     // A list that is on the screen can be used at once. (The editor normally waits a moment, and a fast Enter or Tab would miss it.)
     autocompletion({ interactionDelay: 0 }),

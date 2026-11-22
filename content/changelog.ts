@@ -19,6 +19,29 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.5.1",
+    date: "2026-11-21T19:15:00-05:00",
+    title: "Fix: Tab after Enter inside a new tag",
+    summary: "After `footer` + Tab and then Enter, `p` + Tab made no paragraph, and yellow bars stayed on the empty lines. Fixed.",
+    details: `
+### What went wrong
+
+- A short form leaves **stops** behind: the places Tab jumps to next. \`footer\` + Tab gives \`<footer></footer>\` with one stop inside and one after it.
+- When you pressed Enter inside the new tag, those stops stayed alive. The yellow bars on the empty lines were the first stop, stretched over the new lines.
+- The next Tab did not look at what you typed. It jumped to the old stop after \`</footer>\`. So \`p\` + Tab left a plain "p" behind, and Tab on an empty line did not indent.
+
+### What changed
+
+- **A new line ends the stops.** Press Enter (or \`Ctrl\` \`Enter\`) inside a new tag, and the stops are gone. The yellow bars go with them. From there, Tab does its normal jobs: expand a short form, jump over a closing tag, or indent.
+- **A short form wins over a stop.** If the text in front of the cursor is a short form, Tab expands it, also while an old stop is still waiting. \`div\` + Tab, then \`p.note\` + Tab now gives a paragraph inside the div.
+- Stops on one line work as before: \`a\` + Tab, the address, Tab, the text, Tab. So does a list from \`ul>li*3\`.
+
+### Still the same, on purpose
+
+- One plain word right in front of a closing tag stays a word: in \`<footer>p|</footer>\` on one line, Tab jumps out and does not make a paragraph. This rule keeps words such as "menu" or "link" from turning into tags inside a sentence.
+`,
+  },
+  {
     version: "1.5",
     date: "2026-11-21T17:32:00-05:00",
     title: "Unit 20: build an AI chat helper",

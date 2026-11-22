@@ -61,6 +61,8 @@ Short forms worth knowing:
 
 Short forms only expand for real HTML tags. A normal word like `hello` stays a word.
 
+After a short form, Tab jumps to the next empty spot, and those spots are marked in yellow. They are for filling in one line. When you press Enter inside the new tag, the spots end, and Tab is free again for the next short form on the new line: `footer`, Tab, Enter, `p`, Tab gives a paragraph inside the footer.
+
 **The suggestion list.** For `!` and for every short form with a symbol in it (`ul>li*3`, `div.card`), a small list opens while you type. It shows the HTML you will get. Press `Enter` or `Tab` to accept it. Press `Esc` to close the list and keep what you typed. A plain tag name such as `p` expands with Tab only, so Enter after a word always starts a new line.
 
 After `!`, the cursor stands on the page title. Type your title, press Tab, and you are inside the `body`. The list for `!` only opens in a file that has no page yet, because a page inside a page is never what you want.
