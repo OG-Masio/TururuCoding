@@ -14,7 +14,7 @@
  * key itself.
  */
 import { DurableObject } from "cloudflare:workers";
-import { DAILY_LIMIT, LIMITS, askModel, buildMessages, describeAiError, readTutorRequest, utcDay, type AiBinding } from "./tutor";
+import { DAILY_NEURONS, LIMITS, MODELS, askModel, buildMessages, costOf, describeAiError, measureStream, modelFor, questionsLeft, readTutorRequest, reserveFor, statusFor, utcDay, type AiBinding } from "./tutor";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -61,28 +61,28 @@ export class SyncStore extends DurableObject<Env> {
       seq INTEGER NOT NULL
     )`);
     this.sql.exec("CREATE INDEX IF NOT EXISTS records_seq ON records (seq)");
-    // How many questions the tutor answered on each day (UTC).
+    // What the tutor used on each day (UTC), in neurons. See DAILY_NEURONS in tutor.ts.
     this.sql.exec("CREATE TABLE IF NOT EXISTS tutor_days (day TEXT PRIMARY KEY, used INTEGER NOT NULL)");
   }
 
-  /** Questions the tutor answered on this day. */
+  /** The neurons the tutor used on this day. */
   tutorUsed(day: string): number {
     const row = this.sql.exec("SELECT used FROM tutor_days WHERE day = ?", day).toArray()[0] as { used: number } | undefined;
     return row?.used ?? 0;
   }
 
-  /** Counts one question, unless today's limit is reached. Calls run one at a time, so two devices cannot both take the last one. */
-  takeTutorTurn(day: string, limit: number): { ok: boolean; used: number } {
+  /** Sets neurons aside for one question, unless they do not fit in today's budget. Calls run one at a time, so two devices cannot both take the last room. */
+  spendTutor(day: string, amount: number, budget: number): { ok: boolean; used: number } {
     this.sql.exec("DELETE FROM tutor_days WHERE day < ?", day);
     const used = this.tutorUsed(day);
-    if (used >= limit) return { ok: false, used };
-    this.sql.exec("INSERT INTO tutor_days (day, used) VALUES (?, 1) ON CONFLICT (day) DO UPDATE SET used = used + 1", day);
-    return { ok: true, used: used + 1 };
+    if (used + amount > budget) return { ok: false, used };
+    this.sql.exec("INSERT INTO tutor_days (day, used) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET used = used + ?", day, amount, amount);
+    return { ok: true, used: used + amount };
   }
 
-  /** Gives a question back when the model never started to answer. */
-  returnTutorTurn(day: string): void {
-    this.sql.exec("UPDATE tutor_days SET used = MAX(used - 1, 0) WHERE day = ?", day);
+  /** Corrects today's count: gives back what a question did not use, or adds what it used on top. */
+  adjustTutor(day: string, change: number): void {
+    this.sql.exec("UPDATE tutor_days SET used = MAX(used + ?, 0) WHERE day = ?", Math.round(change), day);
   }
 
   /** Records changed after change number `after`, oldest first. */
@@ -136,7 +136,7 @@ const CORS: Record<string, string> = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "authorization, content-type",
   "access-control-allow-methods": "GET, POST, OPTIONS",
-  "access-control-expose-headers": "x-tutor-used, x-tutor-limit, x-tutor-model",
+  "access-control-expose-headers": "x-tutor-used, x-tutor-limit, x-tutor-model, x-tutor-answered",
   "access-control-max-age": "86400",
 };
 
@@ -180,8 +180,14 @@ const problemWith = (record: unknown): string | null => {
 
 // ------------------------------------------------------------------- tutor
 
+/**
+ * What a page that was loaded before version 1.7 still asks for: a count of questions.
+ * It reads "limit minus used" as the questions left.
+ */
+const oldCount = (spent: number) => ({ used: 0, limit: questionsLeft(MODELS[0], DAILY_NEURONS - spent) });
+
 /** POST /api/tutor: one question in, the model's answer out, as a stream. */
-async function handleTutor(request: Request, env: Env): Promise<Response> {
+async function handleTutor(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   if (!env.AI) return fail(503, "This server has no tutor yet. Publish the site again to add it.");
 
   const length = Number(request.headers.get("content-length") ?? "NaN");
@@ -197,29 +203,45 @@ async function handleTutor(request: Request, env: Env): Promise<Response> {
   const asked = readTutorRequest(body);
   if (!asked.ok) return fail(400, asked.error);
 
-  // Count the question before the model runs. This is what keeps the tutor inside the free amount.
+  const chosen = modelFor(asked.value.model);
+  const messages = buildMessages(asked.value);
+
+  // Set the most this question can cost aside before the model runs. This is what keeps the tutor inside the free amount.
   const day = utcDay();
   const store = storeStub(env);
-  const turn = await store.takeTutorTurn(day, DAILY_LIMIT);
+  const reserved = reserveFor(chosen, messages);
+  const turn = await store.spendTutor(day, reserved, DAILY_NEURONS);
   if (!turn.ok) {
-    return json({ error: `You asked the tutor ${DAILY_LIMIT} questions today. That is the daily limit that keeps it free. It starts again at midnight UTC.`, used: turn.used, limit: DAILY_LIMIT }, 429);
+    // A smaller model costs less: it may still fit.
+    const smaller = MODELS.find((model) => model !== chosen && reserveFor(model, messages) <= DAILY_NEURONS - turn.used);
+    const tip = smaller ? ` ${smaller.name} is cheaper and still has room: choose it at the top of the tutor.` : "";
+    return json({ error: `The tutor has used its free AI amount for today. It starts again at midnight UTC.${tip}`, ...statusFor(turn.used), ...oldCount(turn.used) }, 429);
   }
 
   try {
-    const { stream, model } = await askModel(env.AI, buildMessages(asked.value));
-    return new Response(stream, {
+    const { stream, model } = await askModel(env.AI, messages, chosen);
+    // One copy of the answer goes to the browser. The other is read here, to count what the answer really cost.
+    const [toBrowser, toCount] = stream.tee();
+    ctx.waitUntil(
+      measureStream(toCount)
+        .then((measured) => store.adjustTutor(day, costOf(model, messages, measured) - reserved))
+        .catch((error) => console.error("tutor count", error)),
+    );
+    const old = oldCount(turn.used);
+    return new Response(toBrowser, {
       headers: {
         "content-type": "text/event-stream; charset=utf-8",
         "cache-control": "no-store",
-        "x-tutor-used": String(turn.used),
-        "x-tutor-limit": String(DAILY_LIMIT),
-        // Which model answered. The site shows it when an answer comes back empty.
-        "x-tutor-model": model,
+        // Which model answered: its full name for Workers AI, and its short name. It is not always the chosen one.
+        "x-tutor-model": model.id,
+        "x-tutor-answered": model.key,
+        "x-tutor-used": String(old.used),
+        "x-tutor-limit": String(old.limit),
       },
     });
   } catch (error) {
     console.error("tutor", error);
-    await store.returnTutorTurn(day);
+    await store.adjustTutor(day, -reserved);
     const problem = describeAiError(error);
     return fail(problem.status, problem.message);
   }
@@ -227,7 +249,7 @@ async function handleTutor(request: Request, env: Env): Promise<Response> {
 
 // ------------------------------------------------------------------ routes
 
-async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
+async function handleApi(request: Request, env: Env, url: URL, ctx: ExecutionContext): Promise<Response> {
   const path = url.pathname;
 
   // Public: lets the site recognise a TururuCoding server.
@@ -244,12 +266,13 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     return json(await storeStub(env).stats());
   }
 
-  // How many questions are left today.
+  // The models of the tutor, and about how many questions are left today with each.
   if (path === "/api/tutor" && request.method === "GET") {
-    return json({ on: !!env.AI, used: await storeStub(env).tutorUsed(utcDay()), limit: DAILY_LIMIT });
+    const spent = await storeStub(env).tutorUsed(utcDay());
+    return json({ on: !!env.AI, ...statusFor(spent), ...oldCount(spent) });
   }
 
-  if (path === "/api/tutor" && request.method === "POST") return handleTutor(request, env);
+  if (path === "/api/tutor" && request.method === "POST") return handleTutor(request, env, ctx);
 
   if (path === "/api/sync/changes" && request.method === "GET") {
     const after = Math.max(0, Math.floor(Number(url.searchParams.get("after") ?? 0)) || 0);
@@ -286,12 +309,12 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
 }
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
     try {
-      return withCors(await handleApi(request, env, url));
+      return withCors(await handleApi(request, env, url, ctx));
     } catch (error) {
       console.error(error);
       return withCors(fail(500, error instanceof Error ? error.message : "Server error."));

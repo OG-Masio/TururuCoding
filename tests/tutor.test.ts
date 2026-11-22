@@ -1,7 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { BACKUP_MODEL, DAILY_LIMIT, INSTRUCTIONS, LIMITS, MAX_ANSWER_TOKENS, MODEL, answerFrom, askModel, buildMessages, describeAiError, readTutorRequest, utcDay, type AiBinding } from "../cloudflare/tutor";
+import {
+  DAILY_NEURONS,
+  INSTRUCTIONS,
+  LAST_RESORT,
+  LIMITS,
+  MODELS,
+  TYPICAL,
+  answerFrom,
+  askModel,
+  buildMessages,
+  chainFor,
+  costOf,
+  describeAiError,
+  measurePiece,
+  measureStream,
+  modelFor,
+  neuronsFor,
+  questionsLeft,
+  readTutorRequest,
+  reserveFor,
+  statusFor,
+  tokensIn,
+  utcDay,
+  type AiBinding,
+} from "../cloudflare/tutor";
 import { renderSafeMarkdown } from "../src/lib/safeMarkdown";
-import { asContext, codeAsText, readEvent, readEvents, withoutThinking } from "../src/lib/tutor";
+import { asContext, chosenModel, codeAsText, readEvent, readEvents, readModels, withoutThinking } from "../src/lib/tutor";
+
+const [BIG, SMALL] = MODELS;
 
 const streamOf = (...chunks: string[]) =>
   new ReadableStream<Uint8Array>({
@@ -89,9 +115,113 @@ describe("the tutor's server: what it accepts", () => {
     if (!result.ok) return;
     const total = buildMessages(result.value).reduce((n, m) => n + m.content.length, 0);
     expect(total).toBeLessThanOrEqual(16_000);
-    // 2 characters per token is the worst case; prices are neurons per million tokens for the model in MODEL.
-    const neurons = (total / 2) * (9091 / 1e6) + MAX_ANSWER_TOKENS * (27273 / 1e6);
-    expect(neurons * DAILY_LIMIT).toBeLessThan(10_000);
+    // Even the longest possible question is a small part of a day's budget, with every model.
+    for (const model of MODELS) expect(reserveFor(model, buildMessages(result.value))).toBeLessThan(DAILY_NEURONS / 20);
+  });
+
+  it("keeps the model the learner chose, and nothing else that was sent", () => {
+    const result = ask([{ role: "user", content: "Hi" }], { model: " gemma-4-26b ", secret: "x" });
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.value.model).toBe("gemma-4-26b");
+    expect("secret" in result.value).toBe(false);
+    const none = ask([{ role: "user", content: "Hi" }]);
+    expect(none.ok && none.value.model).toBe("");
+  });
+});
+
+describe("the tutor's server: models and the daily budget", () => {
+  it("has a big model first and a smaller one after it, with different short names", () => {
+    expect(BIG.id).toBe("@cf/openai/gpt-oss-120b");
+    expect(SMALL.id).toBe("@cf/google/gemma-4-26b-a4b-it");
+    expect(new Set([...MODELS, LAST_RESORT].map((m) => m.key)).size).toBe(MODELS.length + 1);
+    for (const model of MODELS) expect(model.name && model.note).toBeTruthy();
+  });
+
+  it("finds a model by its short name, and takes the first one for anything else", () => {
+    expect(modelFor("gemma-4-26b")).toBe(SMALL);
+    expect(modelFor("")).toBe(BIG);
+    expect(modelFor("@cf/some/other-model")).toBe(BIG);
+  });
+
+  it("stays under Cloudflare's free 10,000 neurons, with room to spare", () => {
+    expect(DAILY_NEURONS).toBeLessThan(10_000);
+  });
+
+  it("prices a question from Cloudflare's price list", () => {
+    // gpt-oss-120b: 31,818 neurons per million tokens in, 68,182 out.
+    expect(neuronsFor(BIG, 1_000_000, 0)).toBe(31818);
+    expect(neuronsFor(BIG, 0, 1_000_000)).toBe(68182);
+    expect(neuronsFor(BIG, 2500, 600)).toBe(121);
+    expect(neuronsFor(SMALL, 2500, 600)).toBe(40);
+    expect(tokensIn(3000)).toBe(1000);
+  });
+
+  it("sets aside the longest answer the model may write", () => {
+    const messages = [{ role: "user" as const, content: "x".repeat(3000) }];
+    expect(reserveFor(BIG, messages)).toBe(neuronsFor(BIG, 1000, BIG.maxTokens));
+    expect(reserveFor(BIG, messages)).toBeGreaterThan(reserveFor(SMALL, messages));
+  });
+
+  it("gives the 30 to 90 questions a day that the big model was chosen for", () => {
+    const fresh = questionsLeft(BIG, DAILY_NEURONS);
+    expect(fresh).toBeGreaterThanOrEqual(60);
+    expect(fresh).toBeLessThanOrEqual(90);
+    // Every question at its highest possible cost still gives 30.
+    const worst = neuronsFor(BIG, tokensIn(16_000), BIG.maxTokens);
+    expect(Math.floor(DAILY_NEURONS / worst)).toBeGreaterThanOrEqual(25);
+    expect(questionsLeft(SMALL, DAILY_NEURONS)).toBeGreaterThan(fresh * 2);
+  });
+
+  it("says zero when not even one question fits any more", () => {
+    const one = neuronsFor(BIG, TYPICAL.inTokens, BIG.maxTokens);
+    expect(questionsLeft(BIG, one - 1)).toBe(0);
+    expect(questionsLeft(BIG, one)).toBe(1);
+    expect(questionsLeft(BIG, 0)).toBe(0);
+    expect(questionsLeft(BIG, -50)).toBe(0);
+  });
+
+  it("tells the site the budget and what is left with each model", () => {
+    const status = statusFor(4000);
+    expect(status.default).toBe(BIG.key);
+    expect(status.models.map((m) => m.key)).toEqual(MODELS.map((m) => m.key));
+    expect(status.models[0].left).toBe(questionsLeft(BIG, DAILY_NEURONS - 4000));
+    expect(statusFor(DAILY_NEURONS).models.every((m) => m.left === 0)).toBe(true);
+  });
+});
+
+describe("the tutor's server: what an answer really cost", () => {
+  const messages = [{ role: "user" as const, content: "x".repeat(3000) }];
+
+  it("measures the text of a piece in every place a model puts it", () => {
+    expect(measurePiece('{"response":"Hello"}').chars).toBe(5);
+    expect(measurePiece('{"choices":[{"delta":{"content":"Hi","reasoning_content":"Hmm"}}]}').chars).toBe(5);
+    expect(measurePiece('{"choices":[{"delta":{"reasoning":"abc"}}]}').chars).toBe(3);
+    expect(measurePiece('{"type":"response.output_text.delta","delta":"four"}').chars).toBe(4);
+    expect(measurePiece("[DONE]")).toEqual({ chars: 0, usage: null });
+    expect(measurePiece('{"choices":[{"delta":{}}]}')).toEqual({ chars: 0, usage: null });
+  });
+
+  it("reads the model's own token counts, under both names they come with", () => {
+    expect(measurePiece('{"response":"","usage":{"prompt_tokens":900,"completion_tokens":300,"total_tokens":1200}}').usage).toEqual({ inTokens: 900, outTokens: 300 });
+    expect(measurePiece('{"type":"response.completed","response":{"usage":{"input_tokens":50,"output_tokens":20}}}').usage).toEqual({ inTokens: 50, outTokens: 20 });
+    expect(measurePiece('{"usage":{"prompt_tokens":"many"}}').usage).toBe(null);
+  });
+
+  it("measures a whole stream, also when a piece is cut in two", async () => {
+    const measured = await measureStream(streamOf('data: {"response":"Hel', 'lo"}\n\ndata: {"choices":[{"delta":{"content":" there"}}]}\n\n', 'data: {"response":"","usage":{"prompt_tokens":10,"completion_tokens":4}}\n\ndata: [DONE]\n\n'));
+    expect(measured).toEqual({ chars: 11, usage: { inTokens: 10, outTokens: 4 } });
+    expect(await measureStream(streamOf('{"response":"plain line"}\n'))).toEqual({ chars: 10, usage: null });
+    expect(await measureStream(streamOf())).toEqual({ chars: 0, usage: null });
+  });
+
+  it("uses the model's counts when there are any, and an estimate when not", () => {
+    expect(costOf(BIG, messages, { chars: 999_999, usage: { inTokens: 1000, outTokens: 500 } })).toBe(neuronsFor(BIG, 1000, 500));
+    expect(costOf(BIG, messages, { chars: 1500, usage: null })).toBe(neuronsFor(BIG, 1000, 500));
+  });
+
+  it("makes a short answer cost much less than what was set aside", () => {
+    const real = costOf(BIG, messages, { chars: 900, usage: null });
+    expect(real).toBeLessThan(reserveFor(BIG, messages) / 2);
   });
 });
 
@@ -110,6 +240,15 @@ describe("the tutor's server: what the model is told", () => {
     expect(messages[0].content).toContain("Links use <a>.");
     expect(messages[0].content).toContain("<a>Home</a>");
     expect(messages[3].content).toBe("Show one.");
+  });
+
+  it("tells the model to answer every question, not only those about the course", () => {
+    expect(INSTRUCTIONS).toContain("Answer every question");
+    expect(INSTRUCTIONS).toContain("any topic is fine");
+    expect(INSTRUCTIONS).not.toContain("For other topics, say kindly that you only help with the course");
+    expect(INSTRUCTIONS).not.toContain("Use only what the lesson has taught so far");
+    // The mark for a code block arrives as three real backticks.
+    expect(INSTRUCTIONS).toContain("```html");
   });
 
   it("puts the selected piece of the lesson in front of the question", () => {
@@ -135,7 +274,7 @@ describe("the tutor's server: what the model is told", () => {
 describe("the tutor's server: asking the model", () => {
   const messages = [{ role: "user" as const, content: "Hi" }];
 
-  it("passes a streamed answer through and asks for a short one", async () => {
+  it("asks the big model first, as a stream, with room to think and answer", async () => {
     const calls: [string, Record<string, unknown>][] = [];
     const ai: AiBinding = {
       async run(model, inputs) {
@@ -144,13 +283,30 @@ describe("the tutor's server: asking the model", () => {
       },
     };
     const { stream, model } = await askModel(ai, messages);
-    expect(model).toBe(MODEL);
+    expect(model).toBe(BIG);
     expect(await collect(stream)).toBe("Hello");
     expect(calls).toHaveLength(1);
-    expect(calls[0][1]).toMatchObject({ stream: true, max_tokens: MAX_ANSWER_TOKENS, chat_template_kwargs: { enable_thinking: false } });
+    expect(calls[0][0]).toBe(BIG.id);
+    expect(calls[0][1]).toMatchObject({ messages, stream: true, max_tokens: BIG.maxTokens });
+    // It thinks by itself: nothing tells it not to.
+    expect("chat_template_kwargs" in calls[0][1]).toBe(false);
   });
 
-  it("asks again with nothing extra when the model refuses the no-thinking switch", async () => {
+  it("asks the model the learner chose, with that model's own settings", async () => {
+    const calls: [string, Record<string, unknown>][] = [];
+    const ai: AiBinding = {
+      async run(model, inputs) {
+        calls.push([model, inputs]);
+        return streamOf('data: {"response":"Quick"}\n\n');
+      },
+    };
+    const { model } = await askModel(ai, messages, SMALL);
+    expect(model).toBe(SMALL);
+    expect(calls[0][0]).toBe(SMALL.id);
+    expect(calls[0][1]).toMatchObject({ max_tokens: SMALL.maxTokens, chat_template_kwargs: { enable_thinking: false } });
+  });
+
+  it("asks again with nothing extra when a model refuses one of its settings", async () => {
     const calls: Record<string, unknown>[] = [];
     const ai: AiBinding = {
       async run(_model, inputs) {
@@ -159,8 +315,8 @@ describe("the tutor's server: asking the model", () => {
         return streamOf('data: {"response":"Plain answer"}\n\n');
       },
     };
-    const { stream, model } = await askModel(ai, messages);
-    expect(model).toBe(MODEL);
+    const { stream, model } = await askModel(ai, messages, SMALL);
+    expect(model).toBe(SMALL);
     expect(calls).toHaveLength(2);
     expect("chat_template_kwargs" in calls[1]).toBe(false);
     expect(await collect(stream)).toBe("Plain answer");
@@ -178,20 +334,39 @@ describe("the tutor's server: asking the model", () => {
     expect(answerFrom({})).toBe("");
   });
 
-  it("uses the backup model when the first one does not start", async () => {
+  it("tries the chosen model, then the rest of the menu, then the last resort", () => {
+    expect(chainFor(BIG).map((t) => [t.model.key, Object.keys(t.extra).length > 0])).toEqual([
+      [BIG.key, false],
+      [SMALL.key, true],
+      [SMALL.key, false],
+      [LAST_RESORT.key, false],
+    ]);
+    expect(chainFor(SMALL).map((t) => t.model.key)).toEqual([SMALL.key, SMALL.key, BIG.key, LAST_RESORT.key]);
+  });
+
+  it("lets another model answer when the chosen one does not start, and says which", async () => {
     const used: string[] = [];
     const ai: AiBinding = {
       async run(model) {
         used.push(model);
-        if (model === MODEL) throw new Error("5007: No such model");
-        return streamOf('data: {"response":"From the backup"}\n\n');
+        if (model === BIG.id) throw new Error("5007: No such model");
+        return streamOf('data: {"response":"From the other one"}\n\n');
       },
     };
     const { stream, model } = await askModel(ai, messages);
-    // The first model is tried twice: without thinking, then with nothing extra.
-    expect(used).toEqual([MODEL, MODEL, BACKUP_MODEL]);
-    expect(model).toBe(BACKUP_MODEL);
-    expect(await collect(stream)).toBe("From the backup");
+    expect(used).toEqual([BIG.id, SMALL.id]);
+    expect(model).toBe(SMALL);
+    expect(await collect(stream)).toBe("From the other one");
+  });
+
+  it("goes down to the last resort when the whole menu fails", async () => {
+    const ai: AiBinding = {
+      async run(model) {
+        if (model !== LAST_RESORT.id) throw new Error("3040: Capacity temporarily exceeded");
+        return streamOf('data: {"response":"Still here"}\n\n');
+      },
+    };
+    expect((await askModel(ai, messages)).model).toBe(LAST_RESORT);
   });
 
   it("does not try again when the account's free amount for the day is used up", async () => {
@@ -203,7 +378,7 @@ describe("the tutor's server: asking the model", () => {
       },
     };
     await expect(askModel(ai, messages)).rejects.toThrow("4006");
-    expect(used).toEqual([MODEL]);
+    expect(used).toEqual([BIG.id]);
   });
 
   it("explains a failure in plain words", () => {
@@ -260,6 +435,32 @@ describe("the tutor in the browser: reading the answer", () => {
     expect(withoutThinking("<think>hmm, an id</think>\n\nAn id is a name.")).toBe("An id is a name.");
     expect(withoutThinking("<think>still going")).toBe("");
     expect(withoutThinking("An id is a name.")).toBe("An id is a name.");
+  });
+
+  it("takes out the marks gpt-oss puts around its thinking and its answer", () => {
+    expect(withoutThinking("<|channel|>analysis<|message|>The learner asks about ids.<|end|><|start|>assistant<|channel|>final<|message|>An id is a name.")).toBe("An id is a name.");
+    expect(withoutThinking("<|channel|>final<|message|>Just the answer.<|return|>")).toBe("Just the answer.");
+    expect(withoutThinking("<|channel|>analysis<|message|>still thinking")).toBe("");
+  });
+
+  it("reads the list of models the server offers, and leaves out what is not a model", () => {
+    const models = readModels([{ key: "a", name: "Model A", note: "Big.", left: 70.9 }, { key: "b", name: "Model B", left: -3 }, { name: "no key" }, "text", null]);
+    expect(models).toEqual([
+      { key: "a", name: "Model A", note: "Big.", left: 70 },
+      { key: "b", name: "Model B", note: "", left: 0 },
+    ]);
+    expect(readModels(undefined)).toEqual([]);
+    expect(readModels({ key: "a" })).toEqual([]);
+  });
+
+  it("asks the model chosen on this device, or the server's first choice", () => {
+    const models = readModels([{ key: "a", name: "A", left: 5 }, { key: "b", name: "B", left: 9 }]);
+    expect(chosenModel(models, "a", "b")?.key).toBe("b");
+    expect(chosenModel(models, "b", null)?.key).toBe("b");
+    // A choice for a model that no longer exists falls back.
+    expect(chosenModel(models, "a", "gone")?.key).toBe("a");
+    expect(chosenModel(models, "gone", "gone")?.key).toBe("a");
+    expect(chosenModel([], "a", "a")).toBe(null);
   });
 
   it("reads why the model stopped", () => {

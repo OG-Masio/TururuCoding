@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import type { Files } from "../lib/lesson";
 import { href } from "../lib/router";
 import { renderSafeMarkdown } from "../lib/safeMarkdown";
-import { MAX_QUESTION, MAX_QUOTE, TutorError, askTutor, codeAsText, tutorState, type ChatTurn, type TutorState } from "../lib/tutor";
+import { MAX_QUESTION, MAX_QUOTE, TutorError, askTutor, chosenModel, codeAsText, tutorState, type ChatTurn, type TutorState } from "../lib/tutor";
 
 interface Props {
   /** One chat per page: "lesson:html-03". */
@@ -21,6 +21,16 @@ interface Props {
 const chats = new Map<string, ChatTurn[]>();
 
 const quickQuestions = ["Explain it more simply", "Show one more example", "What is wrong with my code?"];
+
+/** The model chosen in the menu. It is remembered on this device. */
+const MODEL_KEY = "tc.tutor-model";
+const savedModel = (): string | null => {
+  try {
+    return localStorage.getItem(MODEL_KEY);
+  } catch {
+    return null;
+  }
+};
 
 const SIDE_KEY = "tc.tutor-side";
 type Side = "left" | "right";
@@ -73,6 +83,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
   const [state, setState] = useState<TutorState | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
   const [side, setSide] = useState<Side>(savedSide);
+  const [modelKey, setModelKey] = useState<string | null>(savedModel);
 
   const input = useRef<HTMLTextAreaElement>(null);
   const panel = useRef<HTMLElement>(null);
@@ -95,6 +106,26 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
   useEffect(() => {
     if (open) refresh();
   }, [open, refresh]);
+
+  const ready = state?.kind === "ready";
+  const models = ready ? state.models : [];
+  const model = ready ? chosenModel(state.models, state.defaultModel, modelKey) : null;
+  // send() runs later: it reads the model through a ref, so it always asks the one that is chosen now.
+  const asked = useRef(model);
+  asked.current = model;
+
+  // The count is asked again a moment after an answer: the server counts the real cost when the answer is complete.
+  const recount = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (recount.current && clearTimeout(recount.current)), []);
+
+  const chooseModel = (key: string) => {
+    setModelKey(key);
+    try {
+      localStorage.setItem(MODEL_KEY, key);
+    } catch {
+      /* private mode: the choice lasts until the page closes */
+    }
+  };
 
   // The keyboard goes to the question box, or to the panel while there is no box yet. Esc then closes it.
   const hasBox = state?.kind === "ready";
@@ -164,6 +195,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
     const controller = new AbortController();
     request.current = controller;
     const now = latest.current;
+    const asking = asked.current;
     try {
       const result = await askTutor(
         {
@@ -171,6 +203,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
           context: now.context,
           code: codeAsText(now.files, now.fileOrder),
           quote: about,
+          model: asking?.key ?? "",
           // Earlier questions keep the piece of the lesson they were about.
           messages: next.map((turn, i) => ({
             role: turn.role,
@@ -186,17 +219,19 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
           },
         },
       );
-      setTurns([...next, { role: "assistant", content: result.answer }]);
-      if (result.usage) setState({ kind: "ready", ...result.usage });
+      // Another model answered when the chosen one did not start. Say so under the answer.
+      const other = asking && result.answeredBy && result.answeredBy !== asking.key ? (models.find((m) => m.key === result.answeredBy)?.name ?? result.answeredBy) : "";
+      setTurns([...next, { role: "assistant", content: result.answer, ...(other ? { by: other } : {}) }]);
     } catch (error) {
       if (controller.signal.aborted) return;
       setProblem(error instanceof TutorError ? error.message : "Something went wrong while asking the tutor. Try again.");
       setProblemDetail(error instanceof TutorError ? error.detail : null);
-      if (error instanceof TutorError && error.usage) setState({ kind: "ready", ...error.usage });
     } finally {
       if (request.current === controller) request.current = null;
       setWriting("");
       setBusy(null);
+      if (recount.current) clearTimeout(recount.current);
+      recount.current = setTimeout(refresh, 1200);
     }
   };
 
@@ -249,8 +284,9 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
     setQuote("");
   };
 
-  const ready = state?.kind === "ready";
-  const left = ready ? Math.max(state.limit - state.used, 0) : null;
+  const left = model ? model.left : null;
+  // The day's amount is shared: when the big model has no room, a smaller one often still has.
+  const otherHasRoom = models.some((m) => m.key !== model?.key && m.left > 0);
   const empty = turns.length === 0 && !busy;
 
   return (
@@ -293,9 +329,20 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
             </button>
           </header>
           {ready ? (
-            <p className="tutor__count" title="The limit keeps the tutor inside the free daily amount of Cloudflare. It starts again at midnight UTC.">
-              {left} of {state.limit} questions left today
-            </p>
+            <div className="tutor__count">
+              {models.length > 1 && model ? (
+                <select className="tutor__model" aria-label="AI model that answers" title={model.note} value={model.key} disabled={busy !== null} onChange={(event) => chooseModel(event.target.value)}>
+                  {models.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <span title="An estimate. The tutor stays inside the free daily AI amount of Cloudflare, and a bigger model uses more of it. It starts again at midnight UTC.">
+                {left === 0 ? (otherHasRoom ? "No questions left today with this model" : "No questions left today") : `${models.length > 1 ? "About " : ""}${left} ${left === 1 ? "question" : "questions"} left today`}
+              </span>
+            </div>
           ) : (
             <span />
           )}
@@ -343,10 +390,15 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
             {ready && empty ? (
               <div className="tutor__hello">
                 <p>
-                  Ask anything about this {what}, in your own words.{" "}
+                  Ask anything, in your own words: about this {what}, about code, or about something else.{" "}
                   {fileOrder.length ? `The tutor sees the ${what} and the code in your editor.` : `The tutor sees the ${what}. It cannot see the files on your computer, so paste the lines you ask about.`}
                 </p>
                 <p className="small muted">Tip: select a piece of the text or the code on the page to ask about exactly that piece.</p>
+                {models.length > 1 && model ? (
+                  <p className="small muted">
+                    {model.name} answers. {model.note} You can choose another model at the top of this panel.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -361,6 +413,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
                 <div key={i} className="tutor__turn">
                   <p className="tutor__who">Tutor</p>
                   <Answer source={turn.content} />
+                  {turn.by ? <p className="tutor__by">Answered by {turn.by}, because the chosen model did not start.</p> : null}
                 </div>
               ),
             )}
@@ -430,7 +483,7 @@ export function Tutor({ pageId, title, what, context, files, fileOrder }: Props)
                 ref={input}
                 rows={2}
                 maxLength={MAX_QUESTION}
-                placeholder={left === 0 ? "No questions left today. The count starts again at midnight UTC." : "Type your question…"}
+                placeholder={left === 0 ? (otherHasRoom ? "No questions left today with this model. Choose another one at the top." : "No questions left today. The count starts again at midnight UTC.") : "Type your question…"}
                 value={draft}
                 disabled={left === 0}
                 onChange={(event) => setDraft(event.target.value)}

@@ -19,6 +19,43 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.7",
+    date: "2026-11-22T09:04:00-05:00",
+    title: "Tutor: a bigger model, a model menu, and an answer to any question",
+    summary: "The tutor now asks GPT-OSS 120B, a bigger model made by OpenAI, and it answers every question, also when it is not about the lesson. A menu at the top of the panel chooses the model.",
+    details: `
+### Why
+
+- The question "what does CSS stand for?" got the answer "I can only help you with the topics in this coding course". Two of the tutor's rules told the model to stay on the lesson, and the model followed them too strictly.
+- The model was the cheapest good one on Cloudflare, with its thinking turned off.
+
+### What changed
+
+- **Every question gets an answer.** The two rules are gone. The tutor is now told: answer every question, any topic is fine, never say that you only help with the course. It still uses the lesson and your code when the question is about them.
+- **A bigger model.** The tutor asks **GPT-OSS 120B**, an open model made by OpenAI. It thinks before it answers. It runs in your own Cloudflare account, on the free plan, like before. There is still no key and no other company in between.
+- **A model menu.** At the top of the panel you choose between GPT-OSS 120B and **Gemma 4 26B**, the smaller model from before. Ask both the same question and keep the one you like. The site remembers your choice on this device.
+- **When a model does not start**, the next one answers, and a line under the answer says which one it was.
+- The tutor is told that it cannot look things up, and to say so for news and prices.
+
+### The count: "About 74 questions left today"
+
+- Cloudflare gives 10,000 "neurons" of AI use a day for free. A bigger model uses more neurons for the same question. So the tutor no longer counts questions. It counts neurons, and allows itself 9,000 a day.
+- Before the model runs, the most the question can cost is set aside. When the answer is complete, the real cost is counted and the rest goes back. A short question costs little.
+- With GPT-OSS 120B that is about 74 normal questions a day, and never fewer than about 29, even when every question is as long as it can be. With Gemma 4 26B it is about 225.
+- When the bigger model has no room left, the smaller one often still has. The panel then says "No questions left today with this model".
+
+### Not in the menu
+
+- Kimi K2.5 was in my list of options. It is no longer in Cloudflare's model catalog, so it is left out.
+- More models can be added in one place: the list \`MODELS\` in \`cloudflare/tutor.ts\`.
+
+### Not tested with the real model
+
+- All of this was tested with a stand-in model, not with the real GPT-OSS 120B.
+- If the tutor has no answer, open **Details for fixing this** in the red box and copy what it shows. Until it is fixed, choose Gemma 4 26B in the menu: that one is known to work.
+`,
+  },
+  {
     version: "1.6",
     date: "2026-11-22T04:51:00-05:00",
     title: "Unit 3: Layout",

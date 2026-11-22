@@ -112,10 +112,12 @@ A letter group followed by a number works for most properties with a size. Words
 
 Sometimes one explanation is not enough. Lessons, quick checks and unit projects have a small robot head in the bottom right corner. It is faint, so it does not get in your way. Point at it and it turns solid. Click it and the tutor opens.
 
-- Ask in your own words: "what is an id for?", "why do I need alt?".
+- Ask in your own words: "what is an id for?", "why do I need alt?". You can ask anything: about the lesson, about code, or about something else.
 - The tutor sees the lesson you are on and the code in your editor. So you can ask "why does my code not work?".
 - Select a piece of the text or the code in the lesson, and a button appears to ask about exactly that part.
-- The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The site allows 80 questions a day. The count starts again at midnight UTC.
+- The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The line at the top of the panel says about how many questions are left today. The count starts again at midnight UTC.
+- The menu at the top of the panel chooses the model. **GPT-OSS 120B** is the bigger one, made by OpenAI. It thinks before it answers, and gives about 70 questions a day. **Gemma 4 26B** is smaller and faster, and gives about three times as many. The site remembers your choice on this device.
+- The tutor cannot search the internet. What it knows stops somewhere in the past, so do not trust it for news or prices.
 - The panel opens on the right and lies over a part of the page. **Move left** puts it, and the robot, on the other side. The site remembers the side on this device.
 - An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
 - Sometimes the tutor has no answer. The red box then has **Ask again**, and a link named **Details for fixing this**. It shows what the AI model sent. Copy it when you want to find out why.

@@ -14,14 +14,25 @@ export interface ChatTurn {
   quote?: string;
   /** The answer stopped with a problem. */
   failed?: boolean;
+  /** The name of the model that wrote this answer, when it was not the chosen one. */
+  by?: string;
 }
 
-export interface TutorUsage {
-  used: number;
-  limit: number;
+/** One model in the tutor's menu, as the server describes it. */
+export interface TutorModelInfo {
+  /** The short name that is sent with a question. */
+  key: string;
+  name: string;
+  note: string;
+  /** About how many questions are left today with this model. */
+  left: number;
 }
 
-export type TutorState = { kind: "not-linked" } | { kind: "off" } | { kind: "unreachable" } | ({ kind: "ready" } & TutorUsage);
+export type TutorState =
+  | { kind: "not-linked" }
+  | { kind: "off" }
+  | { kind: "unreachable" }
+  | { kind: "ready"; models: TutorModelInfo[]; defaultModel: string };
 
 /** These match the limits of the server (cloudflare/tutor.ts). */
 export const MAX_QUESTION = 1200;
@@ -29,7 +40,24 @@ export const MAX_QUOTE = 600;
 const MAX_CONTEXT = 5000;
 const MAX_CODE = 4000;
 
-/** Is the tutor there, and how many questions are left today? */
+/** The list of models as the server sent it. Anything that is not a model is left out. */
+export function readModels(value: unknown): TutorModelInfo[] {
+  if (!Array.isArray(value)) return [];
+  const models: TutorModelInfo[] = [];
+  for (const item of value) {
+    const m = (item ?? {}) as Record<string, unknown>;
+    if (typeof m.key !== "string" || !m.key || typeof m.name !== "string") continue;
+    models.push({ key: m.key, name: m.name, note: typeof m.note === "string" ? m.note : "", left: typeof m.left === "number" && m.left > 0 ? Math.floor(m.left) : 0 });
+  }
+  return models;
+}
+
+/** The model that answers: the one the learner chose on this device, or the server's first one. */
+export function chosenModel(models: TutorModelInfo[], defaultModel: string, saved: string | null): TutorModelInfo | null {
+  return models.find((m) => m.key === saved) ?? models.find((m) => m.key === defaultModel) ?? models[0] ?? null;
+}
+
+/** Is the tutor there, which models does it have, and about how many questions are left today? */
 export async function tutorState(): Promise<TutorState> {
   const pending = linkedFetch("/tutor");
   if (!pending) return { kind: "not-linked" };
@@ -38,9 +66,12 @@ export async function tutorState(): Promise<TutorState> {
     // A server from before the tutor existed does not know this address.
     if (res.status === 404) return { kind: "off" };
     if (!res.ok) return { kind: "unreachable" };
-    const body = (await res.json()) as { on?: boolean; used?: number; limit?: number };
+    const body = (await res.json()) as { on?: boolean; used?: number; limit?: number; default?: unknown; models?: unknown };
     if (!body.on) return { kind: "off" };
-    return { kind: "ready", used: body.used ?? 0, limit: body.limit ?? 0 };
+    const models = readModels(body.models);
+    if (models.length) return { kind: "ready", models, defaultModel: typeof body.default === "string" ? body.default : models[0].key };
+    // A server from before the model menu: one model without a name, and a plain count of questions.
+    return { kind: "ready", models: [{ key: "", name: "", note: "", left: Math.max((body.limit ?? 0) - (body.used ?? 0), 0) }], defaultModel: "" };
   } catch {
     return { kind: "unreachable" };
   }
@@ -147,13 +178,16 @@ export async function readEvents(body: ReadableStream<Uint8Array>, onData: (data
 }
 
 /**
- * Some models put their thinking in the answer, inside marks: <think>…</think>, or
- * <|channel>…<channel|> (Gemma). The learner only needs the answer.
+ * Some models put their thinking in the answer, inside marks: <think>…</think>,
+ * <|channel>…<channel|> (Gemma), or <|channel|>analysis… (gpt-oss). The learner only needs the answer.
  */
 export const withoutThinking = (answer: string) =>
   answer
     .replace(/<think>[\s\S]*?(<\/think>|$)/g, "")
     .replace(/<\|channel>[\s\S]*?(<channel\|>|$)/g, "")
+    // gpt-oss marks its thinking as the "analysis" channel and its answer as the "final" channel.
+    .replace(/<\|channel\|>(analysis|commentary)[\s\S]*?(<\|channel\|>final<\|message\|>|$)/g, "")
+    .replace(/<\|start\|>assistant|<\|channel\|>final|<\|(start|end|return|message|channel)\|>/g, "")
     .replace(/<\|(channel|turn)>|<(channel|turn)\|>/g, "")
     .replace(/^\s+/, "");
 
@@ -163,12 +197,13 @@ export interface AskInput {
   code: string;
   quote: string;
   messages: { role: "user" | "assistant"; content: string }[];
+  /** The short name of the model to ask. "" lets the server choose. */
+  model: string;
 }
 
 export class TutorError extends Error {
   constructor(
     message: string,
-    public usage: TutorUsage | null = null,
     /** What the server really sent, for finding out why there was no answer. */
     public detail: string | null = null,
   ) {
@@ -178,12 +213,12 @@ export class TutorError extends Error {
 
 /**
  * Asks one question. `onAnswer` gets the answer so far, again and again, while it grows.
- * Returns the full answer and how many questions were used today.
+ * Returns the full answer, and the short name of the model that wrote it (not always the one that was asked).
  */
 export async function askTutor(
   input: AskInput,
   handlers: { onAnswer: (answer: string) => void; onThinking?: () => void; signal?: AbortSignal },
-): Promise<{ answer: string; usage: TutorUsage | null }> {
+): Promise<{ answer: string; answeredBy: string | null }> {
   const pending = linkedFetch("/tutor", { method: "POST", body: JSON.stringify(input), signal: handlers.signal });
   if (!pending) throw new TutorError("This device is not linked, so it cannot reach the tutor.");
   let res: Response;
@@ -195,22 +230,17 @@ export async function askTutor(
   }
   if (!res.ok) {
     let message = res.status === 401 ? "The server did not accept this device's key. Open your device link again." : `The tutor answered with an error (${res.status}).`;
-    let usage: TutorUsage | null = null;
     try {
-      const body = (await res.json()) as { error?: string; used?: number; limit?: number };
+      const body = (await res.json()) as { error?: string };
       if (body.error && res.status !== 401) message = body.error;
-      if (typeof body.used === "number" && typeof body.limit === "number") usage = { used: body.used, limit: body.limit };
     } catch {
       /* not JSON */
     }
     if (res.status === 404) message = "This server has no tutor yet. Publish the site again to add it.";
-    throw new TutorError(message, usage);
+    throw new TutorError(message);
   }
 
-  const used = Number(res.headers.get("x-tutor-used"));
-  const limit = Number(res.headers.get("x-tutor-limit"));
-  const usage = Number.isFinite(used) && Number.isFinite(limit) && limit > 0 ? { used, limit } : null;
-  if (!res.body) throw new TutorError("The tutor sent an empty answer. Try again.", usage);
+  if (!res.body) throw new TutorError("The tutor sent an empty answer. Try again.");
 
   let raw = "";
   let thought = "";
@@ -252,9 +282,9 @@ export async function askTutor(
       ...(first.length ? first : ["(nothing)"]),
       ...(last.length ? [pieces > first.length + last.length ? "…\nLast pieces:" : "Last pieces:", ...last] : []),
     ].join("\n");
-    if (failure) throw new TutorError(`The AI model stopped with an error. Try again. (${failure})`, usage, detail);
-    if (thought.trim() || raw.trim()) throw new TutorError("The AI model thought about the question but did not get to the answer. Ask again, or ask a shorter question.", usage, detail);
-    throw new TutorError("The tutor did not write an answer this time. Ask again, or ask in other words.", usage, detail);
+    if (failure) throw new TutorError(`The AI model stopped with an error. Try again. (${failure})`, detail);
+    if (thought.trim() || raw.trim()) throw new TutorError("The AI model thought about the question but did not get to the answer. Ask again, or ask a shorter question.", detail);
+    throw new TutorError("The tutor did not write an answer this time. Ask again, or ask in other words.", detail);
   }
-  return { answer, usage };
+  return { answer, answeredBy: res.headers.get("x-tutor-answered") };
 }

@@ -249,5 +249,5 @@ async function chat(request, env) {
 
 - `const DAILY_LIMIT = 3;` One number, and the fourth question of the day is refused before the model is asked. A refused question costs nothing.
 - The limit is in `src/index.js`, on the server. A visitor cannot read it, change it or go around it. If the count were kept in the browser, clearing the browser's storage would reset it.
-- This counter is simple, and it has a weak spot: two questions that arrive in the very same moment can both read the same count. For a small helper that does not matter. The tutor of this site needs an exact count, so it uses a **Durable Object**, which handles requests one at a time. Look for `takeTutorTurn` in `cloudflare/worker.ts`.
+- This counter is simple, and it has a weak spot: two questions that arrive in the very same moment can both read the same count. For a small helper that does not matter. The tutor of this site needs an exact count, so it uses a **Durable Object**, which handles requests one at a time. Look for `spendTutor` in `cloudflare/worker.ts`.
 - The key in this lesson is compared as plain text. The real site keeps only a scrambled form (a hash) of the key on the server. Look for `isAuthorized` in the same file.
