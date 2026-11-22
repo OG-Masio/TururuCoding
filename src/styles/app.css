@@ -1356,9 +1356,21 @@ span.codebox__file {
   background: var(--code-selection);
 }
 
-.cm-editor .cm-matchingBracket {
-  background: transparent;
+/*
+  The boxes around a pair: two brackets that belong together, or the two names of one tag.
+  They only show after a click (the editor then has the class cm-show-pairs).
+  While you type they stay away, because a box next to the cursor hides the cursor.
+*/
+.cm-editor.cm-show-pairs .cm-matchingBracket {
   outline: 1.5px solid var(--code-hi);
+}
+
+/* Not after a click: no box and no tint. (The long selectors are needed to win over the editor's own colors.) */
+.cm-editor:not(.cm-show-pairs) .cm-matchingBracket,
+.cm-editor.cm-focused:not(.cm-show-pairs) .cm-matchingBracket,
+.cm-editor:not(.cm-show-pairs) .cm-nonmatchingBracket,
+.cm-editor.cm-focused:not(.cm-show-pairs) .cm-nonmatchingBracket {
+  background: transparent;
 }
 
 .cm-editor .cm-placeholder {

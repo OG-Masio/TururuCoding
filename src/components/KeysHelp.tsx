@@ -19,6 +19,7 @@ const keys: { keys: string[]; does: string; example?: string }[] = [
   { keys: [mod, "/"], does: "Turn the line into a comment, and back." },
   { keys: [mod, "D"], does: "Select the next place the same word appears, to change both at once." },
   { keys: ["type"], does: "Change the name of a tag, and its closing tag changes with it. Both names are underlined while they are linked." },
+  { keys: ["click"], does: "Click next to a bracket, or in the name of a tag: boxes show the two parts that belong together. They go away when you type." },
   { keys: [mod, "Z"], does: `Undo. ${isMac ? "⌘ Shift Z" : "Ctrl Y"} brings it back.` },
   { keys: ["Tab"], does: "At the start of a line: indent. Shift Tab takes the indent away." },
   { keys: ["Esc", "Tab"], does: "Leave the editor with the keyboard: Esc first, then Tab." },

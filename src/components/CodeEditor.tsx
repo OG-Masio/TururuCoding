@@ -9,6 +9,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import { fastKeys } from "../lib/editorKeys";
 import { canFormat, formatCode } from "../lib/format";
 import { linkedTags } from "../lib/linkedTags";
+import { pairMarks } from "../lib/pairMarks";
 import { wrapWith } from "../lib/wrapWith";
 import { useThemeState } from "../lib/theme";
 import { highlighters } from "../lib/tokens";
@@ -86,6 +87,7 @@ export function CodeEditor({ filename, value, onChange, placeholder, api }: Prop
           basicSetup,
           fastKeys(filename),
           linkedTags(filename),
+          pairMarks,
           wrapWith(filename),
           canFormat(filename)
             ? keymap.of([

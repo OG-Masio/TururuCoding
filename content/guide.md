@@ -82,6 +82,8 @@ With nothing selected, it wraps the text of the line the cursor is on. `Esc` clo
 
 **Rename both tags at once.** Put the cursor in the name of a tag and change it. The closing tag changes with it, and it works from the closing tag too. Both names are underlined while they are linked. One Undo takes both changes back.
 
+**See what belongs together.** Click right next to a `<`, `>`, `{`, `}`, `(` or `)`, or in the name of a tag. Boxes show that part and its partner: the other bracket, or the other tag name. The boxes only come after a click. They go away as soon as you type or move with the arrow keys, so they never hide the cursor.
+
 **Format.** The **Format** button in the editor bar puts every line at the right indent. It does not change your code: it only moves it. If you do not like the result, press Undo.
 
 **Short forms for CSS.** Between the `{` and `}` of a CSS rule, a short form becomes a full line. A small list shows what you will get. Press `Tab` or `Enter` to accept it.

@@ -19,6 +19,29 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.5.3",
+    date: "2026-11-22T04:29:00-05:00",
+    title: "Pair boxes only after a click",
+    summary: "The boxes around two brackets or two tag names that belong together no longer show while you type. They show when you click, and go away when you type again.",
+    details: `
+### Why
+
+- The editor draws a box around the two parts of a pair: \`<\` and \`>\`, \`{\` and \`}\`, or the name in \`<span>\` and in \`</span>\`.
+- The box and the cursor have the same color. When the cursor stood at the edge of a box, you could not see it. In \`code|</span>\` it was hard to tell if the cursor was before or after the tag.
+
+### What changed
+
+- **While you type: no boxes.** Also no boxes when you move with the arrow keys, Home, End or Tab. The cursor is the only yellow line.
+- **After a click: boxes.** Click next to a bracket, or in the name of a tag, and the pair gets its boxes. This also works when you click the place where the cursor already is.
+- **Type again and they are gone.**
+- This is the same in HTML, CSS and JavaScript.
+
+### Still the same
+
+- **Rename both tags at once** works as before. The thin line under the two names stays while you type in a name. It is under the text, so it does not hide the cursor, and it is the sign that both names change.
+`,
+  },
+  {
     version: "1.5.2",
     date: "2026-11-21T20:09:00-05:00",
     title: "Fix: the tutor had no answer for any question",
