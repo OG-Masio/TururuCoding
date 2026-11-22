@@ -1,0 +1,149 @@
+## The method: answer first
+
+You do not have to struggle to learn. Every lesson gives you the finished answer and explains it. Your job is to copy it, then change it a little. Every lesson has the same four steps:
+
+1. **Read the answer.** The complete, working code, and what it looks like when it runs.
+2. **Understand it.** A short explanation of each part, in plain words.
+3. **Copy it.** Type the answer into your editor. Typing it yourself is what makes it stick. If you are short on time, one button pastes it for you.
+4. **Twist it.** A small change to make by yourself: add one thing, rename one thing. The twist answer is right there, with the changed lines marked.
+
+Then you press **Mark lesson done** and go to the next one.
+
+No answer is ever hidden. If you would like one click between you and the twist answer, so you can try first, turn on *Fold the twist answer* in [Settings](#/settings).
+
+## The checks
+
+Under most twists there is a short list with boxes. The boxes fill in by themselves when your code does what the twist asks. They are there so you know you got it right. They never block you: you can mark a lesson done at any time.
+
+## Skip what you already know
+
+Every unit starts with a quick check: one task that uses everything the unit teaches, with its answer. If nothing in it is new to you, skip the unit with one click and move on. Skipped lessons stay open, so you can come back later.
+
+## Your editor
+
+- The colored area is your code. The white area under it is the result. It updates while you type.
+- **Bigger code** and **Bigger result** give one of them the whole space.
+- When your code prints something or has an error, a **Console** opens under the result. A red line is an error: read it, it usually names the problem.
+- If you replace your code by mistake (with *Paste the answer*, for example), press **Undo** in the message at the bottom.
+
+## Type faster
+
+The editor has the same fast-typing keys as VS Code. The **Keys** button in the editor shows this list at any time. On a Mac, use `⌘` where it says `Ctrl`, and `Option` where it says `Alt`.
+
+| Key | What it does |
+| --- | --- |
+| `Tab` | Jumps over the closing tag, bracket or quote right after the cursor. With the cursor in `you|</p>`, Tab puts it after `</p>`. Then `Enter` starts the next line. |
+| `Tab` | Expands a short form into full HTML (this is called Emmet). Type `p` and press Tab: you get `<p></p>` with the cursor inside. Type your text, press Tab again, and the cursor jumps out after `</p>`. |
+| `!` then `Enter` | Starts a whole empty page. A small list opens and shows what you will get. Enter accepts it. |
+| `Alt` `W` | Wraps the selected text in a tag. Type the tag, then Enter. |
+| `Shift` `Alt` `F` | Format: fixes the indentation of the whole file. The **Format** button does the same. |
+| `Ctrl` `Enter` | Starts a new line below, from anywhere in the line. You do not have to go to the end first. |
+| `Ctrl` `Shift` `Enter` | Starts a new line above. |
+| `End` and `Home` | Go to the end or the start of the line. |
+| `Alt` `↑` or `↓` | Moves the line up or down. |
+| `Shift` `Alt` `↓` | Copies the line down. |
+| `Ctrl` `/` | Turns the line into a comment, and back. |
+| `Ctrl` `D` | Selects the next place the same word appears, so you change both at once. |
+| `Ctrl` `Z` | Undo. |
+| `Esc` then `Tab` | Leaves the editor with the keyboard. |
+
+Short forms worth knowing:
+
+| Type this, then Tab | You get |
+| --- | --- |
+| `p` | `<p></p>` |
+| `a` | `<a href=""></a>` |
+| `img` | `<img src="" alt="">` |
+| `ul>li*3` | A list with three items |
+| `div.card` | `<div class="card"></div>` |
+| `section#about>h2+p` | A section with the id `about`, with a heading and a paragraph inside |
+| `!` | A whole empty page: doctype, `html`, `head` and `body` |
+
+Short forms only expand for real HTML tags. A normal word like `hello` stays a word.
+
+After a short form, Tab jumps to the next empty spot, and those spots are marked in yellow. They are for filling in one line. When you press Enter inside the new tag, the spots end, and Tab is free again for the next short form on the new line: `footer`, Tab, Enter, `p`, Tab gives a paragraph inside the footer.
+
+**The suggestion list.** For `!` and for every short form with a symbol in it (`ul>li*3`, `div.card`), a small list opens while you type. It shows the HTML you will get. Press `Enter` or `Tab` to accept it. Press `Esc` to close the list and keep what you typed. A plain tag name such as `p` expands with Tab only, so Enter after a word always starts a new line.
+
+After `!`, the cursor stands on the page title. Type your title, press Tab, and you are inside the `body`. The list for `!` only opens in a file that has no page yet, because a page inside a page is never what you want.
+
+Use them after you have typed a tag by hand a few times. First learn what `<p>` is, then let Tab write it for you.
+
+**Wrap with a tag.** Select some text and press `Alt` `W`. A small bar opens at the top of the editor. Type a short form and press Enter.
+
+| You select | You type | You get |
+| --- | --- | --- |
+| `Hello` | `strong` | `<strong>Hello</strong>` |
+| `Home` | `a` | `<a href="">Home</a>`, with the cursor in `href` |
+| two paragraphs | `div.card` | A `div` with the class `card` around them |
+| three lines | `ul>li*` | A list with one item for every line |
+
+With nothing selected, it wraps the text of the line the cursor is on. `Esc` closes the bar.
+
+**Rename both tags at once.** Put the cursor in the name of a tag and change it. The closing tag changes with it, and it works from the closing tag too. Both names are underlined while they are linked. One Undo takes both changes back.
+
+**Format.** The **Format** button in the editor bar puts every line at the right indent. It does not change your code: it only moves it. If you do not like the result, press Undo.
+
+**Short forms for CSS.** Between the `{` and `}` of a CSS rule, a short form becomes a full line. A small list shows what you will get. Press `Tab` or `Enter` to accept it.
+
+| Type this | You get |
+| --- | --- |
+| `m10` | `margin: 10px;` |
+| `p10-20` | `padding: 10px 20px;` |
+| `mt8` `mr8` `mb8` `ml8` | `margin-top: 8px;` and the other three sides. `pt8` and so on for padding |
+| `w100p` | `width: 100%;` |
+| `fz18` | `font-size: 18px;` |
+| `c#333` | `color: #333;` |
+| `bgc` | `background-color: #fff;`, with the cursor on the color |
+| `bd` | `border: 1px solid #000;`. Tab moves through the three values |
+| `bdrs8` | `border-radius: 8px;` |
+| `tac` | `text-align: center;` |
+| `fwb` | `font-weight: bold;` |
+| `df` | `display: flex;` |
+| `dn` | `display: none;` |
+| `curp` | `cursor: pointer;` |
+
+A letter group followed by a number works for most properties with a size. Words only work when they are on a fixed list, so a short form never becomes something you did not mean.
+
+## Ask the tutor
+
+Sometimes one explanation is not enough. Lessons, quick checks and unit projects have a small robot head in the bottom right corner. It is faint, so it does not get in your way. Point at it and it turns solid. Click it and the tutor opens.
+
+- Ask in your own words: "what is an id for?", "why do I need alt?".
+- The tutor sees the lesson you are on and the code in your editor. So you can ask "why does my code not work?".
+- Select a piece of the text or the code in the lesson, and a button appears to ask about exactly that part.
+- The tutor is an AI model. It runs in the same Cloudflare account as this site, inside its free daily amount, so it costs nothing. The site allows 80 questions a day. The count starts again at midnight UTC.
+- The panel opens on the right and lies over a part of the page. **Move left** puts it, and the robot, on the other side. The site remembers the side on this device.
+- An AI model can be wrong. When the tutor and the lesson say different things, trust the lesson.
+
+The tutor works on the published site, on a linked device. [About](#/guide/about) tells how it is built. [Unit 20](#/unit/ai-helper), *AI in your site: build a chat helper*, teaches you to build one yourself.
+
+## Themes
+
+In [Settings](#/settings) you can pick the colors you like to work in: TururuCoding's own look, or one of the best-known VS Code themes, such as One Dark Pro, Dracula, GitHub, Night Owl and Tokyo Night. A theme can color the whole site or only the code areas. The result area stays white, because it shows your page the way a browser shows it.
+
+## Your work is saved
+
+Everything you type is saved by itself, in this browser. [My work](#/work) shows all of it, running, and lets you download any page as a real file.
+
+To use more than one device, link them. When the site was published you got a **device link**. Open it once on each device (computer, laptop, phone). From then on your progress and your code follow you. The link contains your private key, so keep it like a password. A linked device can show the link again in [Settings](#/settings).
+
+A device that is not linked still works. It just keeps its progress to itself.
+
+You can also download a backup file in Settings at any time.
+
+## Units, projects and capstones
+
+- A **unit** is about ten lessons on one topic, and ends with a small **unit project** that uses all of them. Every project comes with a finished example and every step explained.
+- A **track** is a group of units, and ends with a **capstone**: a bigger project that you build on your own computer with real tools, and put online.
+
+The [map](#/) shows the whole road. Units marked *Not written yet* are planned: their lessons are fixed, and they get written one unit at a time.
+
+## Where the code runs
+
+- **In the site editor:** HTML, CSS and JavaScript lessons. Nothing to install.
+- **On your computer:** capstones, and lessons about tools such as Git, databases, servers and deploying. The site gives you the steps and the code. Unit 7 sets up your computer.
+
+Each unit page says which one it uses.
+
+A lesson that runs on your computer has the same four steps, but no editor on the page. Step 3 gives you the commands to type in your terminal and shows what you should see. Under the twist there is a list called *Check yourself*: the site cannot see your computer, so you tick each box when you see it with your own eyes. Unit 20 is the first unit of this kind.

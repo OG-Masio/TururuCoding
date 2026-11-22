@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Boxes stacked on a pallet">
+  <rect width="320" height="220" fill="#eef3e4"/>
+  <g stroke="#16243a" stroke-width="4" fill="#d9a066">
+    <rect x="60" y="112" width="66" height="56"/><rect x="126" y="112" width="66" height="56"/><rect x="192" y="112" width="66" height="56"/>
+    <rect x="93" y="56" width="66" height="56"/><rect x="159" y="56" width="66" height="56"/>
+  </g>
+  <g stroke="#16243a" stroke-width="4">
+    <path d="M93 84h66M159 84h66M60 140h198"/>
+  </g>
+  <g fill="#7a5230" stroke="#16243a" stroke-width="4">
+    <rect x="48" y="168" width="224" height="12"/><rect x="56" y="180" width="26" height="20"/><rect x="147" y="180" width="26" height="20"/><rect x="238" y="180" width="26" height="20"/>
+  </g>
+</svg>
