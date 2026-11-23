@@ -11,8 +11,8 @@
  * Ctrl+Enter (a new line below, from anywhere in the line) and the keys for
  * moving and copying lines already come with the editor.
  */
-import { acceptCompletion, autocompletion, clearSnippet, closeCompletion, completionStatus, snippet, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
-import { indentWithTab } from "@codemirror/commands";
+import { acceptCompletion, autocompletion, clearSnippet, closeCompletion, completionStatus, pickedCompletion, snippet, type Completion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
+import { indentWithTab, isolateHistory } from "@codemirror/commands";
 import { syntaxTree } from "@codemirror/language";
 import { EditorSelection, EditorState, Prec, Transaction, type Extension } from "@codemirror/state";
 import { EditorView, keymap, type Command } from "@codemirror/view";
@@ -29,6 +29,25 @@ const HTML_TAGS = new Set(
     "bq btn inp opt tarea sel sect art hdr ftr mn str leg fig figc pic ifr emb obj cap colg fst optg dlg tem adr dat prog src lorem doc"
   ).split(" "),
 );
+
+/**
+ * Tags that hold other tags, not text. Right inside one of these, a plain tag name is
+ * meant as a tag: in "<footer>p|</footer>" Tab makes a paragraph.
+ */
+const CONTAINERS = new Set("div section header footer main nav article aside ul ol dl table thead tbody tfoot tr form fieldset select figure details body".split(" "));
+
+/**
+ * Is the word the only thing inside a container tag?
+ *   lead  the line up to the word:   <footer>
+ *   rest  the line after the cursor: </footer>
+ */
+export function aloneInContainer(lead: string, rest: string): boolean {
+  const open = /<([A-Za-z][\w-]*)(?:\s[^<>]*)?>$/.exec(lead);
+  const close = /^<\/([A-Za-z][\w-]*)\s*>/.exec(rest);
+  if (!open || !close) return false;
+  const name = open[1].toLowerCase();
+  return name === close[1].toLowerCase() && CONTAINERS.has(name);
+}
 
 /** A short form that is only a tag name, like "p" or "ul", with nothing else. */
 export const isBareWord = (text: string) => /^[A-Za-z][\w-]*$/.test(text);
@@ -152,7 +171,9 @@ function abbreviationAt(state: EditorState, filename: string): Found | null {
   const lead = before.slice(0, found.start);
   if (lead.trim() !== "" && !lead.endsWith(">")) return null;
   // "<a>link|</a>": one word right before a closing tag is text. Tab jumps out instead.
-  if (isBareWord(found.abbreviation) && /^\s*<\//.test(line.text.slice(range.head - line.from))) return null;
+  // The exception: the word is the only thing inside a tag that holds other tags, as in "<footer>p|</footer>".
+  const rest = line.text.slice(range.head - line.from);
+  if (isBareWord(found.abbreviation) && /^\s*<\//.test(rest) && !aloneInContainer(lead, rest)) return null;
   return { from: line.from + found.start, to: line.from + found.end, abbreviation: found.abbreviation, kind };
 }
 
@@ -173,12 +194,38 @@ function suggestHere(state: EditorState, found: Found): boolean {
   return alone && !/<html[\s>]/i.test(state.doc.toString());
 }
 
+/**
+ * Puts a snippet in the place of a short form, as a step of its own for Undo.
+ * One Undo then brings back exactly what was typed: "<div>menu</div>" in place of
+ * "<div><menu></menu></div>". Without this, typing and expanding in one quick go
+ * were one step, and Undo took everything away.
+ */
+function insertSnippet(view: EditorView, template: string, from: number, to: number, completion: Completion | null = null): void {
+  snippet(template)(
+    {
+      state: view.state,
+      // The snippet makes the change. It is sent again here with two notes: "a completion", and "keep this apart in the history".
+      dispatch: (tr) =>
+        view.dispatch({
+          changes: tr.changes,
+          selection: tr.selection,
+          effects: tr.effects,
+          scrollIntoView: true,
+          annotations: [Transaction.userEvent.of("input.complete"), isolateHistory.of("full"), ...(completion ? [pickedCompletion.of(completion)] : [])],
+        }),
+    },
+    completion,
+    from,
+    to,
+  );
+}
+
 /** Tab: expand the short form in front of the cursor. */
 export const expandAbbreviation = (filename: string): Command => (view) => {
   const found = abbreviationAt(view.state, filename);
   const template = found && snippetFor(found);
   if (!found || !template) return false;
-  snippet(template)(view, null, found.from, found.to);
+  insertSnippet(view, template, found.from, found.to);
   return true;
 };
 
@@ -193,7 +240,7 @@ export const acceptAbbreviation = (filename: string): Command => (view) => {
   const template = snippetFor(found);
   if (!template) return false;
   closeCompletion(view);
-  snippet(template)(view, null, found.from, found.to);
+  insertSnippet(view, template, found.from, found.to);
   return true;
 };
 
@@ -224,7 +271,7 @@ export const abbreviationCompletions =
           type: "text",
           boost: 99,
           info: found.kind === "css" ? undefined : () => previewNode(text),
-          apply: (view, completion, from, to) => snippet(template)(view, completion, from, to),
+          apply: (view, completion, from, to) => insertSnippet(view, template, from, to, completion),
         },
       ],
     };

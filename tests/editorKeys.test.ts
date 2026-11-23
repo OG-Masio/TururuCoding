@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CSS_WORDS, cssToSnippet, cssToText, isCssShortForm } from "../src/lib/cssShortForms";
 import { formatCode } from "../src/lib/format";
 import { wrapText } from "../src/lib/wrapWith";
-import { expandToSnippet, expandToText, isAbbreviation, suggestsItself } from "../src/lib/editorKeys";
+import { aloneInContainer, expandToSnippet, expandToText, isAbbreviation, suggestsItself } from "../src/lib/editorKeys";
 
 describe("short forms (Emmet)", () => {
   it("accepts real short forms", () => {
@@ -15,6 +15,29 @@ describe("short forms (Emmet)", () => {
     for (const text of ["hello", "you", "Sam", "the", "tururu", "www.example", "ul>", "div.", "3", "", ".", "e.g", "p,", "Link", "Menu", "Table"]) {
       expect(isAbbreviation(text), text).toBe(false);
     }
+  });
+
+  it("reads a tag name as a tag when it is the only thing inside a container", () => {
+    expect(aloneInContainer("<footer>", "</footer>")).toBe(true);
+    expect(aloneInContainer('  <div class="card" id="a">', "</div>")).toBe(true);
+    expect(aloneInContainer("<div><section>", "</section></div>")).toBe(true);
+    expect(aloneInContainer("<ul>", "</ul>")).toBe(true);
+    expect(aloneInContainer("<TR>", "</tr>")).toBe(true);
+  });
+
+  it("leaves it a word inside tags that hold text, and when it is not alone", () => {
+    // tags for text: here "menu", "code" or "link" is a word
+    for (const tag of ["p", "li", "a", "td", "h2", "button", "span", "label"]) expect(aloneInContainer(`<${tag}>`, `</${tag}>`)).toBe(false);
+    // something stands between the opening tag and the word
+    expect(aloneInContainer("<div>See the ", "</div>")).toBe(false);
+    expect(aloneInContainer("<div> ", "</div>")).toBe(false);
+    // something stands between the word and the closing tag
+    expect(aloneInContainer("<div>", " more</div>")).toBe(false);
+    expect(aloneInContainer("<div>", " </div>")).toBe(false);
+    // the closing tag belongs to another element
+    expect(aloneInContainer("<div>", "</section>")).toBe(false);
+    expect(aloneInContainer("", "</div>")).toBe(false);
+    expect(aloneInContainer("<div>", "")).toBe(false);
   });
 
   it("puts a stop inside the tag and a last stop after it", () => {

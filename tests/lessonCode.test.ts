@@ -17,6 +17,15 @@ describe("the code in the lessons", () => {
     expect(blocks.length).toBeGreaterThan(60);
   });
 
+  it("has no drawings made of line characters", () => {
+    // The code font has no line characters (┌ ─ │ ►). The browser takes them from another font with
+    // another width, and the drawing does not line up. Draw with real boxes: see .boxmodel and .flow in app.css.
+    const drawn = Object.entries(lessons)
+      .filter(([, source]) => /[\u2500-\u257f\u25ba\u25c4]/.test(source))
+      .map(([path]) => path.replace("../content/units/", ""));
+    expect(drawn).toEqual([]);
+  });
+
   it("is already tidy: Format leaves every answer, starter and twist answer as it is", async () => {
     const changed: string[] = [];
     for (const block of blocks) {

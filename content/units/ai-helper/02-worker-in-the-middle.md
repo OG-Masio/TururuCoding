@@ -77,14 +77,13 @@ form.addEventListener("submit", async (event) => {
 
 The picture of the whole unit:
 
-```
-  the browser                your Worker                 the model
-  (public)                   (yours, private)
- ┌───────────┐   question   ┌──────────────┐  messages  ┌─────────┐
- │ index.html│ ───────────► │ src/index.js │ ─────────► │   AI    │
- │ chat.js   │ ◄─────────── │              │ ◄───────── │         │
- └───────────┘    answer    └──────────────┘    text    └─────────┘
-```
+<div class="flow" role="img" aria-label="Three boxes in a row. Left: the browser, which is public, with index.html and chat.js. Middle: your Worker, which is yours and private, with src/index.js. Right: the AI model. The question goes from the browser to the Worker, and the Worker sends messages to the model. The model sends text back to the Worker, and the Worker sends the answer back to the browser.">
+<div class="flow__part"><p class="flow__name">the browser <small>public</small></p><div class="flow__box"><code>index.html</code><code>chat.js</code></div></div>
+<div class="flow__link"><span class="flow__go">question</span><span class="flow__back">answer</span></div>
+<div class="flow__part"><p class="flow__name">your Worker <small>yours, private</small></p><div class="flow__box"><code>src/index.js</code></div></div>
+<div class="flow__link"><span class="flow__go">messages</span><span class="flow__back">text</span></div>
+<div class="flow__part"><p class="flow__name">the model <small>&nbsp;</small></p><div class="flow__box">AI</div></div>
+</div>
 
 Everything in the left box is sent to the visitor's computer. Anyone can open it and read it: right-click on a page, **View page source**. A key, a password or a rule ("only 50 questions a day") that lives there can be read, copied and removed. The middle box runs on a server. Nobody outside can read its code or its secrets. So the rule is: **the browser asks your server, and only your server asks the model.**
 

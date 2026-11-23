@@ -19,6 +19,33 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.7.1",
+    date: "2026-11-23T12:45:00-05:00",
+    title: "A tag inside a new tag with Tab, Undo for short forms, and two drawings repaired",
+    summary: "footer + Tab, then p + Tab, now makes a paragraph inside the footer on the same line. Undo brings a short form back as you typed it. The box-model drawing in unit 2 no longer has a crooked right side.",
+    details: `
+### A tag name inside a new container tag
+
+- Type \`footer\`, press Tab, type \`p\`, press Tab. You now get \`<footer><p></p></footer>\`, with the cursor in the paragraph. Before, Tab jumped out of the footer and left the letter p behind.
+- It works when both of these are true:
+  - The tag name is the **only** thing inside the tag.
+  - The tag is a **container**, a tag that holds other tags: \`div\`, \`section\`, \`header\`, \`footer\`, \`main\`, \`nav\`, \`article\`, \`aside\`, \`ul\`, \`ol\`, \`dl\`, \`table\` and its parts, \`form\`, \`fieldset\`, \`select\`, \`figure\`, \`details\`, \`body\`.
+- Inside a tag for text (\`p\`, \`li\`, \`a\`, \`td\`, \`h1\`, \`button\`) nothing changed: in \`<li>menu</li>\` the word stays a word, and Tab jumps out.
+- The catch you accepted: one word that is also a tag name, alone in a container, becomes a tag. \`<div>menu</div>\` + Tab gives \`<div><menu></menu></div>\`. Undo brings the word back.
+
+### Undo for short forms
+
+- Every short form is now a step of its own for Undo. One \`Ctrl\` \`Z\` brings back exactly what you typed: the list from \`ul>li*3\` becomes \`ul>li*3\` again, and a page from \`!\` becomes \`!\`.
+- Before, typing and expanding in one quick go counted as one step. Undo then took away everything you had just typed.
+
+### Two drawings repaired
+
+- **Unit 2, lesson 4 (the box model).** The drawing of margin, border, padding and content was made of line characters in a code block. The code font of this site has no such characters, so the browser took them from another font with another width, and the right side did not line up. The drawing is now made of four real boxes. It is the box model, drawn with the box model.
+- **Unit 20, lesson 2 (browser, Worker, model).** The same kind of drawing, repaired the same way: three real boxes with arrows.
+- A test now refuses line characters in lesson files, so this cannot come back.
+`,
+  },
+  {
     version: "1.7",
     date: "2026-11-22T09:04:00-05:00",
     title: "Tutor: a bigger model, a model menu, and an answer to any question",

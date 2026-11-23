@@ -79,15 +79,15 @@ body {
 
 Think of a framed picture on a wall. The picture is the **content**. The white card around the picture is the **padding**. The frame is the **border**. The empty wall between this frame and the next one is the **margin**.
 
-```
-┌─────────────── margin ───────────────┐
-│  ┌──────────── border ────────────┐  │
-│  │  ┌───────── padding ────────┐  │  │
-│  │  │         content          │  │  │
-│  │  └──────────────────────────┘  │  │
-│  └────────────────────────────────┘  │
-└──────────────────────────────────────┘
-```
+<div class="boxmodel" role="img" aria-label="Four boxes, one inside the other. From the outside to the inside: margin, border, padding, content.">
+<div class="boxmodel__layer boxmodel__layer--margin"><span class="boxmodel__name">margin</span>
+<div class="boxmodel__layer boxmodel__layer--border"><span class="boxmodel__name">border</span>
+<div class="boxmodel__layer boxmodel__layer--padding"><span class="boxmodel__name">padding</span>
+<div class="boxmodel__layer boxmodel__layer--content">content</div>
+</div>
+</div>
+</div>
+</div>
 
 - `border: 2px solid #1f2933;` The line around the box. Three values in one declaration: how thick (`2px`), what kind (`solid`; also `dashed` and `dotted`), and the color.
 - `padding: 16px;` Space **inside** the border, between the line and the content. Without it, the text touches the line.

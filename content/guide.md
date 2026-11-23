@@ -62,6 +62,10 @@ Short forms worth knowing:
 
 Short forms only expand for real HTML tags. A normal word like `hello` stays a word.
 
+**A tag inside a new tag, on one line.** Type `footer`, press `Tab`, type `p`, press `Tab`: you get `<footer><p></p></footer>` with the cursor in the paragraph. This works when the tag name is the only thing inside a tag that holds other tags: `div`, `section`, `header`, `footer`, `main`, `nav`, `article`, `ul`, `ol`, `table`, `tr`, `form` and a few more. Inside a tag for text (`p`, `li`, `a`, `td`, `h1`, `button`) a word stays a word, and `Tab` jumps out.
+
+**Undo a short form.** One Undo (`Ctrl` `Z`) brings back exactly what you typed: `<div><menu></menu></div>` becomes `<div>menu</div>` again.
+
 After a short form, Tab jumps to the next empty spot, and those spots are marked in yellow. They are for filling in one line. When you press Enter inside the new tag, the spots end, and Tab is free again for the next short form on the new line: `footer`, Tab, Enter, `p`, Tab gives a paragraph inside the footer.
 
 **The suggestion list.** For `!` and for every short form with a symbol in it (`ul>li*3`, `div.card`), a small list opens while you type. It shows the HTML you will get. Press `Enter` or `Tab` to accept it. Press `Esc` to close the list and keep what you typed. A plain tag name such as `p` expands with Tab only, so Enter after a word always starts a new line.
